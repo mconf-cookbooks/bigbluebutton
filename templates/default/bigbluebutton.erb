@@ -1,0 +1,102 @@
+#!/bin/bash
+
+#
+# BigBlueButton open source conferencing system - http://www.bigbluebutton.org/
+#
+# Copyright (c) 2012 BigBlueButton Inc. and by respective authors (see below).
+#
+# This program is free software; you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free Software
+# Foundation; either version 3.0 of the License, or (at your option) any later
+# version.
+#
+# BigBlueButton is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
+#
+
+test -x /var/bigbluebutton || exit 0
+
+#
+# How N days back to keep files
+#
+history=<%= @keep_files_newer_than %>
+
+#
+# Delete presentations older than N days
+#
+find /var/bigbluebutton/ -maxdepth 1 -type d -name "*-*" -mtime +$history -exec rm -rf '{}' \;
+
+#
+# Delete webcam streams in red5 older than N days
+#
+find /usr/share/red5/webapps/video/streams/ -name "*.flv" -mtime +$history -exec rm '{}' \;
+
+#
+# Delete desktop sharing streams in red5 older than N days
+#
+find /var/bigbluebutton/deskshare/ -name "*.flv" -mtime +$history -exec rm '{}' \;
+
+#
+# Delete FreeSWITCH wav recordings older than N days
+#
+find /var/freeswitch/meetings/ -name "*.wav" -mtime +$history -exec rm '{}' \;
+
+#
+# Delete old log files
+#
+find /var/log/bigbluebutton -name '*.log*' -mtime +15 -exec rm -r '{}' \;
+find /opt/freeswitch/log -name '*.log*' -mtime +15 -exec rm -r '{}' \;
+
+#
+# Remove old encrypted recordings (wait 15 days for them to be downloaded by the recording server and processed)
+#
+if [ -d /var/bigbluebutton/published/mconf_encrypted/ ]; then
+    find /var/bigbluebutton/published/mconf_encrypted/ -maxdepth 1 -type d -name "*-*" -mtime +15 -exec rm -rf '{}' \;
+fi
+if [ -d /var/bigbluebutton/unpublished/mconf_encrypted/ ]; then
+    find /var/bigbluebutton/unpublished/mconf_encrypted/ -maxdepth 1 -type d -name "*-*" -mtime +15 -exec rm -rf '{}' \;
+fi
+
+#
+# Delete old raw dirs from recordings properly published using 'presentation' scripts.
+#
+
+remove_raw_of_published_recordings(){
+    #TYPES=$(cd /usr/local/bigbluebutton/core/scripts/process; ls *.rb | sed s/.rb//g)
+    logger "Removing raw directory of old recordings:"
+    TYPES="presentation"
+    MIN_DAYS=10
+    old_meetings=$(find /var/bigbluebutton/recording/raw/*/events.xml  -mtime +$MIN_DAYS | cut -d"/" -f6 )
+    for meeting in $old_meetings
+    do
+        PROPERLY_PUBLISHED="true"
+        FAILED_TYPES=""
+        for type in $TYPES
+        do
+            file="/var/bigbluebutton/recording/status/published/$meeting-$type.done"
+            if ! [ -f "$file" ]; then
+                PROPERLY_PUBLISHED="false"
+                FAILED_TYPES="$FAILED_TYPES $type"
+            fi
+        done
+        if [ "$PROPERLY_PUBLISHED" == "true" ]; then
+            logger "$meeting properly published, removing raw dir."
+            rm -r /var/bigbluebutton/recording/raw/$meeting/
+        else
+            logger "$meeting was not properly published in [ $FAILED_TYPES ]"
+        fi
+    done 
+}
+
+#remove_raw_of_published_recordings
+
+#
+# Remove old *.afm and *.pfb files from /tmp directory (these were created by Ghostscript)
+#
+find /tmp -name "*.afm" -mtime +10 -exec rm '{}' \;
+find /tmp -name "*.pfb" -mtime +10 -exec rm '{}' \;
+
