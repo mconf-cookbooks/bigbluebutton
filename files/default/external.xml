@@ -103,5 +103,9 @@
     <!-- enable rtcp on every channel also can be done per leg basis with rtcp_audio_interval_msec variable set to passthru to pass it across a call-->
     <param name="rtcp-audio-interval-msec" value="5000"/>
     <param name="rtcp-video-interval-msec" value="5000"/>
+
+    <!-- Cut down in the join time -->
+    <param name="dtmf-type" value="info"/>
+    <param name="liberal-dtmf" value="true"/>
   </settings>
 </profile>

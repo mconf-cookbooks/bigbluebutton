@@ -15,14 +15,7 @@ require 'socket'
 require 'securerandom'
 require 'ipaddress'
 
-ruby_block "print warning" do
-    block do
-        Chef::Log.info("This is being printed on execution phase")
-    end
-    action :create
-end
-
-define_properties = ruby_block "define bigbluebutton properties" do
+ruby_block "define bigbluebutton properties" do
     block do
         if File.exists?('/var/lib/tomcat7/webapps/bigbluebutton/WEB-INF/classes/bigbluebutton.properties')
             properties = Hash[File.read('/var/lib/tomcat7/webapps/bigbluebutton/WEB-INF/classes/bigbluebutton.properties').scan(/(.+?)=(.+)/)]
@@ -76,12 +69,5 @@ define_properties = ruby_block "define bigbluebutton properties" do
             Chef::Log.info("\thandling_meetings: #{node[:bbb][:handling_meetings]}")
         end
     end
-    action :create
+    action :run
 end
-
-# it will make this block to execute before the others
-if File.exists?('/var/lib/tomcat7/webapps/bigbluebutton/WEB-INF/classes/bigbluebutton.properties')
-    Chef::Log.info("This is being printed on compile phase")
-    define_properties.run_action(:create)
-end
-

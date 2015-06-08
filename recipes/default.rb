@@ -25,73 +25,25 @@ end
 
 execute "apt-get update"
 
-node[:bbb][:ffmpeg][:dependencies].each do |pkg|
-  package pkg
-end
-
-if node[:bbb][:ffmpeg][:install_method] == "package"
-  current_ffmpeg_version = `ffmpeg -version | grep 'ffmpeg version' | cut -d' ' -f3`.strip!
-  ffmpeg_update_needed = (current_ffmpeg_version != node[:bbb][:ffmpeg][:version])
-  ffmpeg_dst = "/tmp/#{node[:bbb][:ffmpeg][:filename]}"
-
-  remote_file ffmpeg_dst do
-    source "#{node[:bbb][:ffmpeg][:repo_url]}/#{node[:bbb][:ffmpeg][:filename]}"
-    action :create
-    only_if { ffmpeg_update_needed }
-  end
-
-  dpkg_package "ffmpeg" do
-    source ffmpeg_dst
-    action :install
-    only_if { ffmpeg_update_needed }
-  end
-else
-  # dependencies of libvpx and ffmpeg
-  # https://code.google.com/p/bigbluebutton/wiki/090InstallationUbuntu#3.__Install_ffmpeg
-  %w( build-essential git-core checkinstall yasm texi2html libvorbis-dev 
-      libx11-dev libxfixes-dev zlib1g-dev pkg-config netcat ).each do |pkg|
-    package pkg do
-      action :install
-    end
-  end
-
-  ffmpeg_repo = "#{Chef::Config[:file_cache_path]}/ffmpeg"
-
-  execute "set ffmpeg version" do
-    command "cp #{ffmpeg_repo}/RELEASE #{ffmpeg_repo}/VERSION"
-    action :nothing
-    subscribes :run, "git[#{ffmpeg_repo}]", :immediately
-  end
-
-  # ffmpeg already includes libvpx
-  include_recipe "ffmpeg"
-end
-
-if node[:bbb][:libvpx][:install_method] == "package"
-  libvpx_dst = "/tmp/#{node[:bbb][:libvpx][:filename]}"
-
-  remote_file libvpx_dst do
-    source "#{node[:bbb][:libvpx][:repo_url]}/#{node[:bbb][:libvpx][:filename]}"
-    action :create_if_missing
-  end
-
-  dpkg_package "libvpx" do
-    source libvpx_dst
-    action :install
-  end
-else
-  if node[:bbb][:ffmpeg][:install_method] == "source"
-    # do nothing because ffmpeg already installed libvpx
-  else
-    include_recipe "libvpx::source"
-  end
-end
+include_recipe "bigbluebutton::ffmpeg"
 
 # add ubuntu repo
 apt_repository "ubuntu" do
   uri "http://archive.ubuntu.com/ubuntu/"
   components ["trusty" , "multiverse"]
 end
+
+package "software-properties-common"
+
+# add libreoffice repo
+apt_repository "libreoffice" do
+  uri "ppa:libreoffice/libreoffice-4-3"
+  distribution node['lsb']['codename']
+end
+
+include_recipe "bigbluebutton::load-properties"
+
+package "wget"
 
 # add bigbluebutton repo
 apt_repository node[:bbb][:bigbluebutton][:package_name] do
@@ -113,7 +65,7 @@ package node[:bbb][:bigbluebutton][:package_name] do
   response_file "bigbluebutton.seed"
   # it will force the maintainer's version of the configuration files
   options "-o Dpkg::Options::='--force-confnew'"
-  action :install
+  action :upgrade
   notifies :run, "execute[restart bigbluebutton]", :delayed
 end
 
@@ -127,12 +79,15 @@ ruby_block "upgrade dependencies recursively" do
       raise "Couldn't upgrade the dependencies recursively"
     end
     
-    resources(:execute => "restart bigbluebutton").run_action(:run) if restart_required
+    resources(:ruby_block => "define bigbluebutton properties").run_action(:run)
+    if restart_required
+      self.notifies :run, "execute[restart bigbluebutton]"
+      self.resolve_notification_references
+    end
+    # resources(:execute => "restart bigbluebutton").run_action(:run) if restart_required
   end
   action :run
 end
-
-include_recipe "bigbluebutton::load-properties"
 
 template "/etc/cron.daily/bigbluebutton" do
   source "bigbluebutton.erb"
@@ -157,7 +112,7 @@ template "/opt/freeswitch/conf/vars.xml" do
   owner "freeswitch"
   mode "0640"
   variables(
-    :external_ip => node[:bbb][:external_ip] == node[:bbb][:internal_ip]? "auto-nat": node[:bbb][:external_ip]
+    lazy {{ :external_ip => node[:bbb][:external_ip] == node[:bbb][:internal_ip]? "auto-nat": node[:bbb][:external_ip] }}
   )
   notifies :run, "execute[restart bigbluebutton]", :delayed
 end
@@ -186,11 +141,15 @@ bash "wait for bbb-demo" do
   action :nothing
 end
 
-package "bbb-check" do
-  if node[:bbb][:check][:enabled]
-    action :upgrade
-  else
-    action :purge
+{ "bbb-check" => node[:bbb][:check][:enabled],
+  "bbb-webhooks" => node[:bbb][:webhooks][:enabled],
+  "bbb-html5" => node[:bbb][:html5][:enabled] }.each do |pkg, enabled|
+  package pkg do
+    if enabled
+      action :upgrade
+    else
+      action :purge
+    end
   end
 end
 
@@ -274,21 +233,6 @@ template "sip.nginx" do
   notifies :reload, "service[nginx]", :immediately
 end
 
-ruby_block "collect packages version" do
-  block do
-    packages = [ "bbb-*", node[:bbb][:bigbluebutton][:package_name], "ffmpeg", "libvpx" ]
-    packages_version = {}
-    packages.each do |pkg|
-      output = `dpkg -l | grep "#{pkg}"`
-      output.split("\n").each do |entry|
-        entry = entry.split()
-        packages_version[entry[1]] = entry[2]
-      end
-    end
-    node.set[:bbb][:bigbluebutton][:packages_version] = packages_version
-  end
-end
-
 ruby_block "reset flag restart" do
   block do
     node.set[:bbb][:force_restart] = false
@@ -313,4 +257,13 @@ ruby_block "reset flag setip" do
   end
   only_if do node[:bbb][:setip_needed] end
   notifies :run, "execute[set bigbluebutton ip]", :delayed
+end
+
+# in case we have a cookbook_file to be the default presentation
+cookbook_file "/var/www/bigbluebutton-default/default.pdf" do
+  source node[:bbb][:default_presentation]
+  owner "root"
+  group "root"
+  mode "0644"
+  ignore_failure true
 end

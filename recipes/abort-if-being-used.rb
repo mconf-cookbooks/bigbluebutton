@@ -12,4 +12,9 @@
 
 include_recipe "bigbluebutton::load-properties"
 
-raise "Server being used, aborting..." if node[:bbb][:handling_meetings]
+ruby_block "abort if being used" do
+  block do
+    raise "Server being used, aborting..." if node[:bbb][:handling_meetings]
+  end
+  action :run
+end
