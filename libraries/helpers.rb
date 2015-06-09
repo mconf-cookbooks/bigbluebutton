@@ -12,6 +12,17 @@
 require 'digest/sha1'
 require 'net/http'
 require 'json'
+require 'uri'
+
+# libvpx module
+module Libvpx
+  # helpers module
+  module Helpers
+    def libvpx_packages
+      ['libvpx-dev']
+    end
+  end
+end
 
 module BigBlueButton
   # Helpers for BigBlueButton
@@ -79,6 +90,17 @@ module BigBlueButton
       rescue
         return nil
       end
+    end
+    
+    def get_installed_bigbluebutton_packages(repo)
+      hostname = URI.parse(repo).hostname
+      
+      a = `grep -e "^Package: " -e "^Version: " /var/lib/apt/lists/#{hostname}*-amd64_Packages`.split("\n").collect {|x| x.sub(/^Package: |^Version: /, "")}
+      Hash[a.each_slice(2).to_a]
+    end
+    
+    def get_installed_packages
+      `dpkg --get-selections | grep -v deinstall`.split().reject {|x| x == "install"}
     end
   end
 end

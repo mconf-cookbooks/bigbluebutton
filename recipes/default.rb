@@ -25,7 +25,8 @@ end
 
 execute "apt-get update"
 
-include_recipe "bigbluebutton::ffmpeg"
+include_recipe "libvpx" if node['ffmpeg']['install_method'] == :package
+include_recipe "ffmpeg"
 
 # add ubuntu repo
 apt_repository "ubuntu" do
@@ -71,20 +72,33 @@ end
 
 ruby_block "upgrade dependencies recursively" do
   block do
-    to_upgrade = `apt-get --dry-run --show-upgraded dist-upgrade`.split("\n").select { |l| l.start_with? "Inst" }.collect { |l| l.split()[1] }
-    restart_required = ! ( to_upgrade.select { |u| u.start_with? "bbb-" or u.start_with? "mconf-" or [ node[:bbb][:bigbluebutton][:package_name], "tomcat7" ].include? u }.empty? )
-    system("apt-get -o Dpkg::Options::='--force-confnew' -y dist-upgrade")
+    bbb_repo = node[:bbb][:bigbluebutton][:repo_url]
+    bbb_packages = get_installed_bigbluebutton_packages(bbb_repo)
+    all_packages = get_installed_packages()
+    upgrade_list = []
+    bbb_packages.each do |pkg, version|
+      if all_packages.include? pkg
+        upgrade_list << "#{pkg}=#{version}"
+      end
+    end
+
+    command = "apt-get --dry-run --show-upgraded install #{upgrade_list.join(' ')}"
+    to_upgrade = `#{command}`.split("\n").select { |l| l.start_with? "Inst" }.collect { |l| l.split()[1] }
+    restart_required = ! to_upgrade.empty?
+
+    command = "apt-get -o Dpkg::Options::='--force-confnew --force-yes' -y install #{upgrade_list.join(' ')}"
+    Chef::Log.info "Running: #{command}"
+    system(command)
     status = $?
     if not status.success?
       raise "Couldn't upgrade the dependencies recursively"
     end
-    
+
     resources(:ruby_block => "define bigbluebutton properties").run_action(:run)
     if restart_required
       self.notifies :run, "execute[restart bigbluebutton]"
       self.resolve_notification_references
     end
-    # resources(:execute => "restart bigbluebutton").run_action(:run) if restart_required
   end
   action :run
 end
@@ -150,6 +164,8 @@ end
     else
       action :purge
     end
+    # apt repo could not be building bbb-webhooks yet
+    ignore_failure true if pkg == "bbb-webhooks"
   end
 end
 

@@ -62,6 +62,21 @@ if [ -d /var/bigbluebutton/unpublished/mconf_encrypted/ ]; then
 fi
 
 #
+# Delete raw files of recordings without recording marks older than N days
+#
+remove_raw_of_recordings_without_marks() {
+	logger "Removing old raw directory of recordings without marks"
+	find /var/bigbluebutton/recording/status -name '*.norecord' -mtime +$history | while read archived_norecord; do
+		recording_id=${archived_norecord%.norecord}
+		recording_id=${recording_id##*/}
+		bbb-record --delete $recording_id 2>&1 | logger
+	done
+}
+
+# Enabled by default; comment to disable.
+remove_raw_of_recordings_without_marks
+
+#
 # Delete old raw dirs from recordings properly published using 'presentation' scripts.
 #
 
@@ -99,4 +114,3 @@ remove_raw_of_published_recordings(){
 #
 find /tmp -name "*.afm" -mtime +10 -exec rm '{}' \;
 find /tmp -name "*.pfb" -mtime +10 -exec rm '{}' \;
-
