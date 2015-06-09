@@ -86,7 +86,7 @@ ruby_block "upgrade dependencies recursively" do
     to_upgrade = `#{command}`.split("\n").select { |l| l.start_with? "Inst" }.collect { |l| l.split()[1] }
     restart_required = ! to_upgrade.empty?
 
-    command = "apt-get -o Dpkg::Options::='--force-confnew --force-yes' -y install #{upgrade_list.join(' ')}"
+    command = "DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::='--force-confnew' -y --force-yes install #{upgrade_list.join(' ')}"
     Chef::Log.info "Running: #{command}"
     system(command)
     status = $?
