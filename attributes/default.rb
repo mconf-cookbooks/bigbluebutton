@@ -26,7 +26,6 @@ default['bbb']['default_presentation'] = "default.pdf"
 default['x264']['install_method'] = :none
 default['libvpx']['install_method'] = :package
 default['ffmpeg']['install_method'] = :source
-default['ffmpeg']['install_method'] = :source
 default['ffmpeg']['git_repository'] = "https://github.com/FFmpeg/FFmpeg.git"
 default['ffmpeg']['git_revision'] = "n2.3.3"
 default['ffmpeg']['compile_flags'] = [ "--enable-version3",
