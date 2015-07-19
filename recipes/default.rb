@@ -25,13 +25,10 @@ end
 
 execute "apt-get update"
 
-# purge ffmpeg package if we intend to install from source, otherwise we do nothing
-package "ffmpeg" do
-  if node['ffmpeg']['install_method'] == :source
-    action :purge
-  else
-    action :nothing
-  end
+# purge ffmpeg package if we intend to install from source
+dpkg_package "ffmpeg" do
+  action :remove
+  only_if { node['ffmpeg']['install_method'] == :source }
 end
 
 include_recipe "libvpx" if node['ffmpeg']['install_method'] == :package

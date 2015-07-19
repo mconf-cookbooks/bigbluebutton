@@ -14,16 +14,6 @@ require 'net/http'
 require 'json'
 require 'uri'
 
-# libvpx module
-module Libvpx
-  # helpers module
-  module Helpers
-    def libvpx_packages
-      ['libvpx-dev']
-    end
-  end
-end
-
 module BigBlueButton
   # Helpers for BigBlueButton
   module Helpers
