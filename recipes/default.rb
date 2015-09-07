@@ -18,11 +18,6 @@ ruby_block "check system architecture" do
   only_if { node[:kernel][:machine] != "x86_64" }
 end
 
-execute "fix dpkg" do
-  command "dpkg --configure -a"
-  action :run
-end
-
 execute "apt-get update"
 
 # purge ffmpeg package if we intend to install from source
@@ -44,7 +39,7 @@ package "software-properties-common"
 
 # add libreoffice repo
 apt_repository "libreoffice" do
-  uri "ppa:libreoffice/libreoffice-4-3"
+  uri "ppa:libreoffice/libreoffice-4-4"
   distribution node['lsb']['codename']
 end
 
