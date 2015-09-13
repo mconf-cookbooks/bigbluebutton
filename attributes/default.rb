@@ -23,6 +23,12 @@ default['bbb']['enforce_salt'] = nil
 default['bbb']['keep_files_newer_than'] = 5
 default['bbb']['default_presentation'] = "default.pdf"
 
+default['bbb']['ssl']['enabled'] = false
+# see http://docs.bigbluebutton.org/install/install.html#configure-nginx-http
+default['bbb']['ssl']['certificates']['certificate_file'] = ""       # .crt
+default['bbb']['ssl']['certificates']['certificate_key_file'] = ""   # .key
+default['bbb']['ssl']['certificates']['dhparam_file'] = "dhp-2048.pem"
+
 default['x264']['install_method'] = :none
 default['libvpx']['install_method'] = :package
 default['ffmpeg']['install_method'] = :source

@@ -15,7 +15,7 @@ ruby_block "check system architecture" do
   block do
     raise "This recipe requires a 64 bits machine"
   end
-  only_if { node[:kernel][:machine] != "x86_64" }
+  only_if { node['kernel']['machine'] != "x86_64" }
 end
 
 execute "apt-get update"
@@ -48,10 +48,10 @@ include_recipe "bigbluebutton::load-properties"
 package "wget"
 
 # add bigbluebutton repo
-apt_repository node[:bbb][:bigbluebutton][:package_name] do
-  key node[:bbb][:bigbluebutton][:key_url]
-  uri node[:bbb][:bigbluebutton][:repo_url]
-  components node[:bbb][:bigbluebutton][:components]
+apt_repository node['bbb']['bigbluebutton']['package_name'] do
+  key node['bbb']['bigbluebutton']['key_url']
+  uri node['bbb']['bigbluebutton']['repo_url']
+  components node['bbb']['bigbluebutton']['components']
   notifies :run, 'execute[apt-get update]', :immediately
 end
 
@@ -63,7 +63,7 @@ execute "accept mscorefonts license" do
 end
 
 # install bigbluebutton package
-package node[:bbb][:bigbluebutton][:package_name] do
+package node['bbb']['bigbluebutton']['package_name'] do
   response_file "bigbluebutton.seed"
   # it will force the maintainer's version of the configuration files
   options "-o Dpkg::Options::='--force-confnew'"
@@ -73,7 +73,7 @@ end
 
 ruby_block "upgrade dependencies recursively" do
   block do
-    bbb_repo = node[:bbb][:bigbluebutton][:repo_url]
+    bbb_repo = node['bbb']['bigbluebutton']['repo_url']
     bbb_packages = get_installed_bigbluebutton_packages(bbb_repo)
     all_packages = get_installed_packages()
     upgrade_list = []
@@ -107,7 +107,7 @@ end
 template "/etc/cron.daily/bigbluebutton" do
   source "bigbluebutton.erb"
   variables(
-    :keep_files_newer_than => node[:bbb][:keep_files_newer_than]
+    :keep_files_newer_than => node['bbb']['keep_files_newer_than']
   )
 end
 
@@ -127,13 +127,42 @@ template "/opt/freeswitch/conf/vars.xml" do
   owner "freeswitch"
   mode "0640"
   variables(
-    lazy {{ :external_ip => node[:bbb][:external_ip] == node[:bbb][:internal_ip]? "auto-nat": node[:bbb][:external_ip] }}
+    lazy {{ :external_ip => node['bbb']['external_ip'] == node['bbb']['internal_ip']? "auto-nat": node['bbb']['external_ip'] }}
   )
   notifies :run, "execute[restart bigbluebutton]", :delayed
 end
 
+remote_directory "/etc/nginx/ssl" do
+  files_mode '0600'
+  source "ssl"
+end
+
+execute "generate diffie-hellman parameters" do
+  dhp_file = "/etc/nginx/ssl/#{node['bbb']['ssl']['certificates']['dhparam_file']}"
+  command "openssl dhparam -out #{dhp_file} 2048"
+  only_if { node['bbb']['ssl']['enabled'] }
+  creates dhp_file
+end
+
+service "nginx"
+
+template "/etc/nginx/sites-available/bigbluebutton" do
+  source "bigbluebutton.nginx.erb"
+  mode "0644"
+  variables(
+    lazy {{
+      :domain => node['bbb']['server_domain'],
+      :secure => node['bbb']['ssl']['enabled'],
+      :certificate_file => node['bbb']['ssl']['certificate_file'],
+      :certificate_key_file => node['bbb']['ssl']['certificate_key_file'],
+      :dhparam_file => node['bbb']['ssl']['certificates']['dhparam_file']
+    }}
+  )
+  notifies :reload, "service[nginx]", :immediately
+end
+
 package "bbb-demo" do
-  if node[:bbb][:demo][:enabled]
+  if node['bbb']['demo']['enabled']
     action :upgrade
     notifies :run, "bash[wait for bbb-demo]", :immediately
   else
@@ -156,9 +185,9 @@ bash "wait for bbb-demo" do
   action :nothing
 end
 
-{ "bbb-check" => node[:bbb][:check][:enabled],
-  "bbb-webhooks" => node[:bbb][:webhooks][:enabled],
-  "bbb-html5" => node[:bbb][:html5][:enabled] }.each do |pkg, enabled|
+{ "bbb-check" => node['bbb']['check']['enabled'],
+  "bbb-webhooks" => node['bbb']['webhooks']['enabled'],
+  "bbb-html5" => node['bbb']['html5']['enabled'] }.each do |pkg, enabled|
   package pkg do
     if enabled
       action :upgrade
@@ -176,7 +205,7 @@ ruby_block "configure recording workflow" do
     block do
         Dir.glob("/usr/local/bigbluebutton/core/scripts/process/*.rb*").each do |filename|
           format = File.basename(filename).split(".")[0]
-          if node[:bbb][:recording][:playback_formats].split(",").include? format
+          if node['bbb']['recording']['playback_formats'].split(",").include? format
             Chef::Log.info("Enabling record and playback format #{format}");
             command_execute("bbb-record --enable #{format}")
           else
@@ -204,14 +233,14 @@ end
 
 execute "set bigbluebutton salt" do
   user "root"
-  command "bbb-conf --setsalt #{node[:bbb][:salt]}"
+  command "bbb-conf --setsalt #{node['bbb']['salt']}"
   action :nothing
   notifies :run, "execute[restart bigbluebutton]", :delayed
 end
 
 execute "set bigbluebutton ip" do
   user "root"
-  command lazy { "bbb-conf --setip #{node[:bbb][:server_domain]}" }
+  command lazy { "bbb-conf --setip #{node['bbb']['server_domain']}" }
   action :nothing
   notifies :run, "execute[restart bigbluebutton]", :delayed
 end
@@ -229,56 +258,56 @@ execute "clean bigbluebutton" do
   action :nothing
 end
 
-node[:bbb][:recording][:rebuild].each do |record_id|
+node['bbb']['recording']['rebuild'].each do |record_id|
   execute "rebuild recording" do
     user "root"
     command "bbb-record --rebuild #{record_id}"
     action :run
   end
 end
-node.set[:bbb][:recording][:rebuild] = []
+node.set['bbb']['recording']['rebuild'] = []
 
-service "nginx"
-
-template "sip.nginx" do
-  path "/etc/bigbluebutton/nginx/sip.nginx"
-  source "sip.nginx.erb"
-  mode "0644"
-  variables(
-    lazy {{ :external_ip => node[:bbb][:external_ip] }}
-  )
-  notifies :reload, "service[nginx]", :immediately
+[ "sip.nginx", "sip-secure.nginx"] .each do |conf_nginx|
+  template conf_nginx do
+    path "/etc/bigbluebutton/nginx/#{conf_nginx}"
+    source "#{conf_nginx}.erb"
+    mode "0644"
+    variables(
+      lazy {{ :external_ip => node['bbb']['external_ip'] }}
+    )
+    notifies :reload, "service[nginx]", :immediately
+  end
 end
 
 ruby_block "reset flag restart" do
   block do
-    node.set[:bbb][:force_restart] = false
+    node.set['bbb']['force_restart'] = false
   end
-  only_if do node[:bbb][:force_restart] end
+  only_if do node['bbb']['force_restart'] end
   notifies :run, "execute[restart bigbluebutton]", :delayed
 end
     
 
 ruby_block "reset flag setsalt" do
   block do
-    node.set[:bbb][:enforce_salt] = nil
-    node.set[:bbb][:setsalt_needed] = false
+    node.set['bbb']['enforce_salt'] = nil
+    node.set['bbb']['setsalt_needed'] = false
   end
-  only_if do node[:bbb][:setsalt_needed] end
+  only_if do node['bbb']['setsalt_needed'] end
   notifies :run, "execute[set bigbluebutton salt]", :delayed
 end
 
 ruby_block "reset flag setip" do
   block do
-    node.set[:bbb][:setip_needed] = false
+    node.set['bbb']['setip_needed'] = false
   end
-  only_if do node[:bbb][:setip_needed] end
+  only_if do node['bbb']['setip_needed'] end
   notifies :run, "execute[set bigbluebutton ip]", :delayed
 end
 
 # in case we have a cookbook_file to be the default presentation
 cookbook_file "/var/www/bigbluebutton-default/default.pdf" do
-  source node[:bbb][:default_presentation]
+  source node['bbb']['default_presentation']
   owner "root"
   group "root"
   mode "0644"
