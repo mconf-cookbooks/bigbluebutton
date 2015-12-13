@@ -146,6 +146,18 @@ end
 
 service "nginx"
 
+ruby_block "update nginx server_names_hash" do
+  block do
+    filepath = "/etc/nginx/nginx.conf"
+    if File.exist?(filepath)
+      fe = Chef::Util::FileEdit.new(filepath)
+      fe.search_file_replace_line(/.*server_names_hash_bucket_size [0-9].*/, "        server_names_hash_bucket_size 64;")
+      fe.write_file
+    end
+  end
+  notifies :reload, "service[nginx]", :immediately
+end
+
 template "/etc/nginx/sites-available/bigbluebutton" do
   source "bigbluebutton.nginx.erb"
   mode "0644"
@@ -286,7 +298,7 @@ ruby_block "reset flag restart" do
   only_if do node['bbb']['force_restart'] end
   notifies :run, "execute[restart bigbluebutton]", :delayed
 end
-    
+
 
 ruby_block "reset flag setsalt" do
   block do
