@@ -228,12 +228,6 @@ ruby_block "configure recording workflow" do
     end
 end
 
-execute "check voice application register" do
-  command "echo 'Restarting because the voice application failed to register with the sip server'"
-  only_if do `bbb-conf --check | grep 'Error: The voice application failed to register with the sip server.' | wc -l`.strip! != "0" end
-  notifies :run, "execute[restart bigbluebutton]", :delayed
-end
-
 execute "restart bigbluebutton" do
   user "root"
   command "echo 'Restarting'"
@@ -266,7 +260,8 @@ end
 
 execute "clean bigbluebutton" do
   user "root"
-  command "bbb-conf --clean"
+  # use --restart instead of --clean so it keeps the logs
+  command "bbb-conf --restart"
   action :nothing
 end
 
