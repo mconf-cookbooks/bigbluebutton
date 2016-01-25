@@ -111,6 +111,19 @@ template "/etc/cron.daily/bigbluebutton" do
   )
 end
 
+template "/etc/cron.daily/remove-recordings-raw.rb" do 
+  source "remove-recordings-raw.rb.erb"
+  variables(
+    :recording_raw_max_retention => node['bbb']['recording_raw_retention']['max_retention']
+  )
+  mode "0755"
+  if node['bbb']['recording_raw_retention']['remove_old_recordings']
+    action :create
+  else
+    action :delete
+  end
+end
+
 { "external.xml" => "/opt/freeswitch/conf/sip_profiles/external.xml" }.each do |k,v|
   cookbook_file v do
     source k

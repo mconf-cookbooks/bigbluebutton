@@ -1,0 +1,31 @@
+#!/usr/bin/ruby
+# encoding: UTF-8
+
+require 'rubygems'
+require 'date'
+require 'logger'
+
+def record_path_to_timestamp(r)
+    File.basename(r).split("-")[1].to_i / 1000
+end
+
+def record_path_to_date(r)
+    DateTime.strptime(record_path_to_timestamp(r).to_s, '%s')
+end
+
+logger = Logger.new("/var/log/bigbluebutton/remove-recordings-raw.log")
+logger.level = Logger::INFO
+recording_raw_max_retention = DateTime.now - <%= @recording_raw_max_retention %>
+
+recordings = Dir.glob("/var/bigbluebutton/recording/raw/*")
+    .select{ |r| File.basename(r) =~ /\w+-\d+/ }
+    .select{ |r| record_path_to_date(r) < recording_raw_max_retention  }
+    .sort{ |a,b| record_path_to_timestamp(a) <=> record_path_to_timestamp(b) }
+
+if ! recordings.empty?
+    logger.info "Max retention: #{recording_raw_max_retention.to_s}"
+    recordings.each do |record_path|
+        logger.info "Removing #{record_path} from #{record_path_to_date(record_path).to_s}"
+        FileUtils.rm_rf record_path
+    end
+end
