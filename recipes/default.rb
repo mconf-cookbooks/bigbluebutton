@@ -107,7 +107,8 @@ end
 template "/etc/cron.daily/bigbluebutton" do
   source "bigbluebutton.erb"
   variables(
-    :keep_files_newer_than => node['bbb']['keep_files_newer_than']
+    :keep_files_newer_than => node['bbb']['keep_files_newer_than'],
+    :logs_max_history => node['bbb']['logs_max_history']
   )
 end
 
