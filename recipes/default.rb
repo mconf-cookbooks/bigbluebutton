@@ -228,6 +228,44 @@ ruby_block "configure recording workflow" do
     end
 end
 
+[   "/usr/share/red5/webapps/bigbluebutton/WEB-INF/classes/logback-bigbluebutton.xml",
+    "/usr/share/red5/webapps/deskshare/WEB-INF/classes/logback-deskshare.xml",
+    "/usr/share/red5/webapps/sip/WEB-INF/classes/logback-sip.xml",
+    "/usr/share/red5/webapps/video/WEB-INF/classes/logback-video.xml" ].each do |filename|
+  ruby_block "set log duration for #{filename}" do
+    block do
+      expr = "//rollingPolicy[@class='ch.qos.logback.core.rolling.TimeBasedRollingPolicy']/MaxHistory"
+      max_history = node['bbb']['logs_max_history']
+      restart_required = false
+      
+      if File.exist? filename
+        doc = Nokogiri::XML(File.open(filename))
+        nodes = doc.xpath(expr)
+        
+        if nodes.length > 0
+          nodes.each do |node|
+            if node.content.to_i != max_history
+              Chef::Log.info "Changing log MaxHistory from #{node.content.to_i} to #{max_history} on #{filename}"
+              node.content = max_history
+
+              xml_file = File.new(filename, "w")
+              xml_file.write(doc.to_xml(:indent => 2))
+              xml_file.close
+              
+              restart_required = true
+            end
+          end
+        end
+      end
+      
+      if restart_required
+        self.notifies :run, "execute[restart bigbluebutton]", :delayed
+        self.resolve_notification_references
+      end
+    end
+  end
+end
+
 execute "restart bigbluebutton" do
   user "root"
   command "echo 'Restarting'"

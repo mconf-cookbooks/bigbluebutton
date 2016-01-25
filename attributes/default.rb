@@ -22,6 +22,7 @@ default['bbb']['force_restart'] = false
 default['bbb']['enforce_salt'] = nil
 default['bbb']['keep_files_newer_than'] = 5
 default['bbb']['default_presentation'] = "default.pdf"
+default['bbb']['logs_max_history'] = 30
 
 default['bbb']['ssl']['enabled'] = false
 # see http://docs.bigbluebutton.org/install/install.html#configure-nginx-http
