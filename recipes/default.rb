@@ -112,8 +112,8 @@ template "/etc/cron.daily/bigbluebutton" do
   )
 end
 
-template "/etc/cron.daily/remove-recordings-raw.rb" do 
-  source "remove-recordings-raw.rb.erb"
+template "/etc/cron.daily/remove-recordings-raw" do 
+  source "remove-recordings-raw.erb"
   variables(
     :recording_raw_max_retention => node['bbb']['recording_raw_retention']['max_retention']
   )
