@@ -24,7 +24,7 @@ default['bbb']['keep_files_newer_than'] = 5
 default['bbb']['default_presentation'] = "default.pdf"
 default['bbb']['logs_max_history'] = 30
 default['bbb']['recording_raw_retention']['remove_old_recordings'] = false
-default['bbb']['recording_raw_retention']['max_retention'] = 180
+default['bbb']['recording_raw_retention']['max_retention'] = 365
 
 default['bbb']['ssl']['enabled'] = false
 # see http://docs.bigbluebutton.org/install/install.html#configure-nginx-http

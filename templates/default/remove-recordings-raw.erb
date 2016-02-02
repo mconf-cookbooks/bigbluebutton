@@ -20,6 +20,7 @@ recording_raw_max_retention = DateTime.now - <%= @recording_raw_max_retention %>
 recordings = Dir.glob("/var/bigbluebutton/recording/raw/*")
     .select{ |r| File.basename(r) =~ /\w+-\d+/ }
     .select{ |r| record_path_to_date(r) < recording_raw_max_retention  }
+    .select{ |r| ! Dir.glob("/var/bigbluebutton/published/**/#{File.basename(r)}").empty? }
     .sort{ |a,b| record_path_to_timestamp(a) <=> record_path_to_timestamp(b) }
 
 if ! recordings.empty?
