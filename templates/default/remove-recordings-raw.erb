@@ -4,13 +4,14 @@
 require 'rubygems'
 require 'date'
 require 'logger'
+require 'fileutils'
 
-def record_path_to_timestamp(r)
-    File.basename(r).split("-")[1].to_i / 1000
+def record_id_to_timestamp(r)
+    r.split("-")[1].to_i / 1000
 end
 
-def record_path_to_date(r)
-    DateTime.strptime(record_path_to_timestamp(r).to_s, '%s')
+def record_id_to_date(r)
+    DateTime.strptime(record_id_to_timestamp(r).to_s, '%s')
 end
 
 logger = Logger.new("/var/log/bigbluebutton/remove-recordings-raw.log")
@@ -18,15 +19,16 @@ logger.level = Logger::INFO
 recording_raw_max_retention = DateTime.now - <%= @recording_raw_max_retention %>
 
 recordings = Dir.glob("/var/bigbluebutton/recording/raw/*")
-    .select{ |r| File.basename(r) =~ /\w+-\d+/ }
-    .select{ |r| record_path_to_date(r) < recording_raw_max_retention  }
-    .select{ |r| ! Dir.glob("/var/bigbluebutton/published/**/#{File.basename(r)}").empty? }
-    .sort{ |a,b| record_path_to_timestamp(a) <=> record_path_to_timestamp(b) }
+    .map{ |r| File.basename(r) }
+    .select{ |r| r =~ /\w+-\d+/ }
+    .select{ |r| record_id_to_date(r) < recording_raw_max_retention  }
+    .select{ |r| ! Dir.glob("/var/bigbluebutton/published/**/#{r}").empty? }
+    .sort{ |a,b| record_id_to_timestamp(a) <=> record_id_to_timestamp(b) }
 
 if ! recordings.empty?
     logger.info "Max retention: #{recording_raw_max_retention.to_s}"
-    recordings.each do |record_path|
-        logger.info "Removing #{record_path} from #{record_path_to_date(record_path).to_s}"
-        FileUtils.rm_rf record_path
+    recordings.each do |r|
+        logger.info "Removing #{r} from #{record_id_to_date(r).to_s}"
+        FileUtils.rm_rf "/var/bigbluebutton/recording/raw/#{r}"
     end
 end
