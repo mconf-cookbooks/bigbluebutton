@@ -1,7 +1,6 @@
 #!/usr/bin/ruby
 # encoding: UTF-8
 
-require 'rubygems'
 require 'date'
 require 'logger'
 require 'fileutils'
@@ -18,11 +17,11 @@ logger = Logger.new("/var/log/bigbluebutton/remove-recordings-raw.log")
 logger.level = Logger::INFO
 recording_raw_max_retention = DateTime.now - <%= @recording_raw_max_retention %>
 
-recordings = Dir.glob("/var/bigbluebutton/recording/raw/*")
-    .map{ |r| File.basename(r) }
-    .select{ |r| r =~ /\w+-\d+/ }
-    .select{ |r| record_id_to_date(r) < recording_raw_max_retention  }
-    .select{ |r| ! Dir.glob("/var/bigbluebutton/published/**/#{r}").empty? }
+recordings = Dir.glob("/var/bigbluebutton/recording/raw/*") \
+    .map{ |r| File.basename(r) } \
+    .select{ |r| (r =~ /\w+-\d+/ && \
+                  record_id_to_date(r) < recording_raw_max_retention && \
+                  Dir.glob("/var/bigbluebutton/published/**/#{r}").empty?) } \
     .sort{ |a,b| record_id_to_timestamp(a) <=> record_id_to_timestamp(b) }
 
 if ! recordings.empty?
