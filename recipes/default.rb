@@ -372,3 +372,17 @@ cookbook_file "/var/www/bigbluebutton-default/default.pdf" do
   mode "0644"
   ignore_failure true
 end
+
+cookbook_file "/usr/local/bigbluebutton/core/scripts/clean-recordings-data.rb" do
+  source "clean-recordings-data.rb"
+  owner "root"
+  group "root"
+  mode "0755"
+end
+
+cron "clean-recordings-data-cron" do
+  action node['bbb']['clean_recordings_data']['enabled']? :create : :delete 
+  hour "2"
+  minute "0"
+  command "/usr/local/bigbluebutton/core/scripts/clean-recordings-data.rb"
+end
