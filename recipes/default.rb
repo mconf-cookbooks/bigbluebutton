@@ -125,6 +125,29 @@ template "/etc/cron.daily/remove-recordings-raw" do
   end
 end
 
+logrotate_app 'remove-recordings-raw' do
+  cookbook 'logrotate'
+  path '/var/log/bigbluebutton/remove-recordings-raw.log'
+  options ['missingok', 'compress', 'copytruncate', 'notifempty', 'dateext']
+  frequency node['bbb']['recording_raw_retention']['logrotate']['frequency']
+  rotate node['bbb']['recording_raw_retention']['logrotate']['rotate']
+  size node['bbb']['recording_raw_retention']['logrotate']['size']
+  dateformat node['bbb']['recording_raw_retention']['logrotate']['frequency'] == 'monthly' ? '%Y%m' : '%Y%m%d'
+  template_mode "0644"
+  create "644 root root"
+end
+
+logrotate_app 'tomcat7' do
+  cookbook 'logrotate'
+  path '/var/log/tomcat7/catalina.out'
+  options ['missingok', 'compress', 'copytruncate', 'notifempty', 'dateext']
+  frequency node['bbb']['logrotate']['frequency']
+  rotate node['bbb']['logrotate']['rotate']
+  size node['bbb']['logrotate']['size']
+  template_mode "0644"
+  create "644 tomcat7 root"
+end
+
 { "external.xml" => "/opt/freeswitch/conf/sip_profiles/external.xml" }.each do |k,v|
   cookbook_file v do
     source k

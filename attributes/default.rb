@@ -25,6 +25,9 @@ default['bbb']['default_presentation'] = "default.pdf"
 default['bbb']['logs_max_history'] = 30
 default['bbb']['recording_raw_retention']['remove_old_recordings'] = false
 default['bbb']['recording_raw_retention']['max_retention'] = 365
+default['bbb']['recording_raw_retention']['logrotate']['frequency'] = 'monthly'
+default['bbb']['recording_raw_retention']['logrotate']['rotate'] = 6
+default['bbb']['recording_raw_retention']['logrotate']['size'] = nil
 default['bbb']['clean_recordings_data']['enabled'] = false
 
 default['bbb']['ssl']['enabled'] = false
@@ -32,6 +35,12 @@ default['bbb']['ssl']['enabled'] = false
 default['bbb']['ssl']['certificates']['certificate_file'] = ""       # .crt
 default['bbb']['ssl']['certificates']['certificate_key_file'] = ""   # .key
 default['bbb']['ssl']['certificates']['dhparam_file'] = "dhp-2048.pem"
+
+# logrotate options
+# by default keeps one log file per day, during a week
+default['bbb']['logrotate']['frequency'] = 'daily'
+default['bbb']['logrotate']['rotate']    = 7
+default['bbb']['logrotate']['size']      = nil
 
 default['x264']['install_method'] = :none
 default['libvpx']['install_method'] = :package
