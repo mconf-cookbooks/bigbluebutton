@@ -17,7 +17,7 @@ require 'ipaddress'
 
 ruby_block "define bigbluebutton properties" do
     block do
-        properties = Hash[File.read('/var/lib/tomcat7/webapps/bigbluebutton/WEB-INF/classes/bigbluebutton.properties').scan(/(.+?)=(.+)/)]
+        properties = Hash[File.read("/var/lib/tomcat7/webapps/bigbluebutton/WEB-INF/classes/bigbluebutton.properties", :encoding => "UTF-8").scan(/(.+?)=(.+)/)]
         if properties.nil? or properties.empty?
             Chef::Log.info("bigbluebutton.properties exists but it's empty")
             return
