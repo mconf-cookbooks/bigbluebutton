@@ -369,24 +369,6 @@ ruby_block "reset flag restart" do
   notifies :run, "execute[restart bigbluebutton]", :delayed
 end
 
-
-ruby_block "reset flag setsalt" do
-  block do
-    node.set['bbb']['enforce_salt'] = nil
-    node.set['bbb']['setsalt_needed'] = false
-  end
-  only_if do node['bbb']['setsalt_needed'] end
-  notifies :run, "execute[set bigbluebutton salt]", :delayed
-end
-
-ruby_block "reset flag setip" do
-  block do
-    node.set['bbb']['setip_needed'] = false
-  end
-  only_if do node['bbb']['setip_needed'] end
-  notifies :run, "execute[set bigbluebutton ip]", :delayed
-end
-
 # in case we have a cookbook_file to be the default presentation
 cookbook_file "/var/www/bigbluebutton-default/default.pdf" do
   source node['bbb']['default_presentation']

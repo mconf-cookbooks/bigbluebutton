@@ -32,34 +32,32 @@ ruby_block "define bigbluebutton properties" do
         server_url = "#{protocol}://#{server_addr}"
         server_domain = server_addr.split(":")[0]
 
-        node.set['bbb']['ip'] = ip
-        node.set['bbb']['server_addr'] = server_addr
-        node.set['bbb']['server_url'] = server_url
-        node.set['bbb']['server_domain'] = server_domain
-        node.set['bbb']['internal_ip'] = node['ipaddress']
+        node.default['bbb']['ip'] = ip
+        node.default['bbb']['server_addr'] = server_addr
+        node.default['bbb']['server_url'] = server_url
+        node.default['bbb']['server_domain'] = server_domain
+        node.default['bbb']['internal_ip'] = node['ipaddress']
 
         external_ip = get_external_ip(node['bbb']['server_domain'])
         if external_ip.to_s == ''
             external_ip = node['bbb']['internal_ip']
         end
-        node.set['bbb']['external_ip'] = external_ip
+        node.default['bbb']['external_ip'] = external_ip
 
-        if not node['bbb']['enforce_salt'].nil? and not node['bbb']['enforce_salt'].empty?
-            node.set['bbb']['salt'] = node['bbb']['enforce_salt']
+        if properties["securitySalt"].to_s == ''
+            node.default['bbb']['salt'] = SecureRandom.hex(16)
         else
-            node.set['bbb']['salt'] = properties["securitySalt"]
+            node.default['bbb']['salt'] = properties["securitySalt"]
         end
-        
-        # this is just an extra check in case that the salt doesn't get saved properly on the node
-        if node['bbb']['salt'].nil? or node['bbb']['salt'].empty?
-            # http://stackoverflow.com/questions/88311/how-best-to-generate-a-random-string-in-ruby
-            node.set['bbb']['salt'] = SecureRandom.hex(16)
-        end
-        node.set['bbb']['setsalt_needed'] = (node['bbb']['salt'] != properties["securitySalt"])
-        node.set['bbb']['setip_needed'] = (node['bbb']['server_url'] != properties["bigbluebutton.web.serverURL"])
+
+        set_salt = node['bbb']['salt'] != properties["securitySalt"]
+        set_ip = node['bbb']['server_url'] != properties["bigbluebutton.web.serverURL"]
+        self.notifies :run, "execute[set bigbluebutton salt]" if set_salt
+        self.notifies :run, "execute[set bigbluebutton ip]" if set_ip
+
         node.save unless Chef::Config['solo']
 
-        node.set['bbb']['handling_meetings'] = is_running_meetings?
+        node.default['bbb']['handling_meetings'] = is_running_meetings?
 
         Chef::Log.info("\tserver_url       : #{node['bbb']['server_url']}")
         Chef::Log.info("\tserver_addr      : #{node['bbb']['server_addr']}")
@@ -67,8 +65,11 @@ ruby_block "define bigbluebutton properties" do
         Chef::Log.info("\tinternal_ip      : #{node['bbb']['internal_ip']}")
         Chef::Log.info("\texternal_ip      : #{node['bbb']['external_ip']}")
         Chef::Log.info("\tsalt             : #{node['bbb']['salt']}")
-        Chef::Log.info("\t--setip needed?    #{node['bbb']['setip_needed']}")
+        Chef::Log.info("\t--salt?          : #{set_salt}")
+        Chef::Log.info("\t--setip?         : #{set_ip}")
         Chef::Log.info("\thandling_meetings: #{node['bbb']['handling_meetings']}")
+
+        self.resolve_notification_references
     end
     action :run
     only_if { File.exists? '/var/lib/tomcat7/webapps/bigbluebutton/WEB-INF/classes/bigbluebutton.properties' }
