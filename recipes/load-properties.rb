@@ -39,7 +39,7 @@ ruby_block "define bigbluebutton properties" do
         node.set['bbb']['internal_ip'] = node['ipaddress']
 
         external_ip = get_external_ip(node['bbb']['server_domain'])
-        if external_ip.nil? or external_ip.empty?
+        if external_ip.to_s == ''
             external_ip = node['bbb']['internal_ip']
         end
         node.set['bbb']['external_ip'] = external_ip

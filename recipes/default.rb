@@ -18,6 +18,8 @@ ruby_block "check system architecture" do
   only_if { node['kernel']['machine'] != "x86_64" }
 end
 
+include_recipe "bigbluebutton::gem-deps"
+
 execute "apt-get update"
 
 # purge ffmpeg package if we intend to install from source
@@ -247,8 +249,6 @@ end
     ignore_failure true if pkg == "bbb-webhooks"
   end
 end
-
-include_recipe "bigbluebutton::open4"
 
 ruby_block "configure recording workflow" do
     block do

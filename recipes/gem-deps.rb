@@ -10,9 +10,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-chef_gem "open4" do
-  version "1.3.0"
-  action :install
+{ "open4" => "1.3.0",
+  "dnsruby" => "1.59.2" }.each do |gem_name, gem_version|
+    chef_gem gem_name do
+      version gem_version
+      action :install
+    end
+    
+    require gem_name
 end
-
-require 'open4'

@@ -13,6 +13,7 @@ require 'digest/sha1'
 require 'net/http'
 require 'json'
 require 'uri'
+require 'dnsruby'
 
 module BigBlueButton
   # Helpers for BigBlueButton
@@ -63,23 +64,21 @@ module BigBlueButton
     end
 
     def get_external_ip(server_domain)
+      qname = server_domain
+      resolve = Dnsruby::Resolver.new({:nameserver => '8.8.8.8'})
+      ip = nil
       begin
-        body = Net::HTTP.get(URI.parse("http://dig.jsondns.org/IN/#{server_domain}/A"))
-        dns_query = JSON.parse(body)
-        if dns_query['header']['rcode'] == 'NOERROR' and dns_query['header']['ancount'] > 0
-          for answer in dns_query['answer']
-            if answer['type'] == "A" and IPAddress.valid? answer['rdata']
-              return answer['rdata']
-            end
+        resolve.query(qname).answer.rrset(qname, Dnsruby::Types.A).rrs.each do |rss|
+          address = rss.address
+          if address.class == Dnsruby::IPv4
+            ip = address.to_s
+            break
           end
         end
-
-        # if couldn't be retrieved using jsondns
-        # http://stackoverflow.com/questions/5742521/finding-the-ip-address-of-a-domain
-        return IPSocket::getaddress(server_domain)
       rescue
         return nil
       end
+      return ip
     end
     
     def get_installed_bigbluebutton_packages(repo)
