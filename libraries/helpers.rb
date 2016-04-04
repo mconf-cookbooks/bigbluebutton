@@ -13,7 +13,6 @@ require 'digest/sha1'
 require 'net/http'
 require 'json'
 require 'uri'
-require 'dnsruby'
 
 module BigBlueButton
   # Helpers for BigBlueButton
