@@ -127,6 +127,35 @@ template "/etc/cron.daily/remove-recordings-raw" do
   end
 end
 
+# handle the imagemagick vulnerability detailed here: https://groups.google.com/forum/#!topic/bigbluebutton-setup/s5zeNpg5M8I
+ruby_block "fix imagemagick vulnerability" do
+  block do
+    xml_filename = "/etc/ImageMagick/policy.xml"
+    if File.exists? xml_filename
+        doc = Nokogiri::XML(File.open(xml_filename)) { |x| x.noblanks }
+        modified = false
+        [ "EPHEMERAL", "URL", "HTTPS", "MVG", "MSL" ].each do |pattern|
+            node = doc.at_xpath("/policymap/policy[@domain='coder' and @rights='none' and @pattern='#{pattern}']")
+            if node.nil?
+                puts "Adding attribute for #{pattern}"
+                node = Nokogiri::XML::Node.new "policy", doc
+                node["domain"] = "coder"
+                node["rights"] = "none"
+                node["pattern"] = pattern
+                doc.at("/policymap") << node
+                modified = true
+            end
+        end
+        
+        if modified
+          xml_file = File.new(xml_filename, "w")
+          xml_file.write(doc.to_xml(:indent => 2))
+          xml_file.close
+        end
+    end
+  end
+end
+
 logrotate_app 'remove-recordings-raw' do
   cookbook 'logrotate'
   path '/var/log/bigbluebutton/remove-recordings-raw.log'
