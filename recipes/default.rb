@@ -45,6 +45,12 @@ apt_repository "libreoffice" do
   distribution node['lsb']['codename']
 end
 
+# add php repo for libssl 1.0.2 needed for chrome 52
+apt_repository "ondrej-php" do
+  uri "ppa:ondrej/php"
+  distribution node['lsb']['codename']
+end
+
 include_recipe "bigbluebutton::load-properties"
 
 package "wget"

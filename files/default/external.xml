@@ -60,17 +60,11 @@
     <param name="inbound-zrtp-passthru" value="true"/> <!-- (also enables late negotiation) -->
     <!--
         DO NOT USE HOSTNAMES, ONLY IP ADDRESSES IN THESE SETTINGS!
-    <param name="rtp-ip" value="$${local_ip_v4}"/>
-    <param name="sip-ip" value="$${local_ip_v4}"/>
-    <param name="ext-rtp-ip" value="auto-nat"/>
-    <param name="ext-sip-ip" value="auto-nat"/>
     -->
-
     <param name="rtp-ip" value="$${local_ip_v4}"/>
     <param name="sip-ip" value="$${local_ip_v4}"/>
     <param name="ext-rtp-ip" value="$${external_rtp_ip}"/>
     <param name="ext-sip-ip" value="$${external_sip_ip}"/>
-
     <param name="rtp-timeout-sec" value="300"/>
     <param name="rtp-hold-timeout-sec" value="1800"/>
     <!--<param name="enable-3pcc" value="true"/>-->
@@ -90,7 +84,7 @@
     <!-- Verify the date on TLS certificates -->
     <param name="tls-verify-date" value="true"/>
     <!-- TLS verify policy, when registering/inviting gateways with other servers (outbound) or handling inbound registration/invite requests how should we verify their certificate -->
-    <!-- set to 'in' to only verify incoming connections, 'out' to only verify outgoing connections, 'all' to verify all connections, also 'in_subjects', 'out_subjects' and 'all_subjects' for subject validation. Multiple policies can be split with a '|' pipe -->
+    <!-- set to 'in' to only verify incoming connections, 'out' to only verify outgoing connections, 'all' to verify all connections, also 'subjects_in', 'subjects_out' and 'subjects_all' for subject validation. Multiple policies can be split with a '|' pipe -->
     <param name="tls-verify-policy" value="none"/>
     <!-- Certificate max verify depth to use for validating peer TLS certificates when the verify policy is not none -->
     <param name="tls-verify-depth" value="2"/>
