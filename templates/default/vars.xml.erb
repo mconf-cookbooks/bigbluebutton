@@ -12,7 +12,6 @@
        
        WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING 
   -->
-  <X-PRE-PROCESS cmd="set" data="suppress_cng=true"/>
   <X-PRE-PROCESS cmd="set" data="default_password=1234"/>
   <!-- Did you change it yet? -->
   <!--
@@ -59,15 +58,13 @@
       affect the sip authentication.  Please review conf/directory/default.xml for more
       information on this topic.
   -->
-
-  <X-PRE-PROCESS cmd="set" data="external_ip_v4=<%= @external_ip %>"/>
+  <X-PRE-PROCESS cmd="set" data="local_ip_v4=<%= @external_ip %>"/>
 
   <X-PRE-PROCESS cmd="set" data="domain=$${local_ip_v4}"/>
   <X-PRE-PROCESS cmd="set" data="domain_name=$${domain}"/>
   <X-PRE-PROCESS cmd="set" data="hold_music=local_stream://moh"/>
-  <X-PRE-PROCESS cmd="set" data="use_profile=internal"/>
+  <X-PRE-PROCESS cmd="set" data="use_profile=external"/>
   <X-PRE-PROCESS cmd="set" data="rtp_sdes_suites=AEAD_AES_256_GCM_8|AEAD_AES_128_GCM_8|AES_CM_256_HMAC_SHA1_80|AES_CM_192_HMAC_SHA1_80|AES_CM_128_HMAC_SHA1_80|AES_CM_256_HMAC_SHA1_32|AES_CM_192_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_32|AES_CM_128_NULL_AUTH"/>
-
   <!--
       Enable ZRTP globally you can override this on a per channel basis
       
@@ -260,8 +257,8 @@
        127 - BV32
 
   -->
-  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=OPUS,speex@16000h@20i,speex@8000h@20i,G7221@32000h,G7221@16000h,G722,PCMU,PCMA,GSM"/>
-  <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=speex@16000h@20i,PCMU,PCMA,GSM"/>
+  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=OPUS,speex@16000h@20i,speex@8000h@20i,G722,PCMU,PCMA,VP8"/>
+  <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=OPUS,speex@16000h@20i,G722,PCMU,PCMA,VP8"/>
 
   <!--
       xmpp_client_profile and xmpp_server_profile
@@ -284,7 +281,7 @@
        use different addresses where this variable appears.
        Used by: dingaling.conf.xml
   -->
-  <X-PRE-PROCESS cmd="set" data="bind_server_ip=$${external_ip_v4}"/>
+  <X-PRE-PROCESS cmd="set" data="bind_server_ip=auto"/>
 
   <!-- NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE
        
@@ -302,7 +299,7 @@
        If unspecified, the bind_server_ip value is used.
        Used by: sofia.conf.xml dingaling.conf.xml
   -->
-  <X-PRE-PROCESS cmd="set" data="external_rtp_ip=$${external_ip_v4}"/>
+  <X-PRE-PROCESS cmd="set" data="external_rtp_ip=stun:stun.freeswitch.org"/>
 
   <!-- external_sip_ip
       Used as the public IP address for SDP.
@@ -315,7 +312,7 @@
        If unspecified, the bind_server_ip value is used.
        Used by: sofia.conf.xml dingaling.conf.xml
   -->
-  <X-PRE-PROCESS cmd="set" data="external_sip_ip=$${external_ip_v4}"/>
+  <X-PRE-PROCESS cmd="set" data="external_sip_ip=stun:stun.freeswitch.org"/>
 
   <!-- unroll-loops
        Used to turn on sip loopback unrolling.
@@ -408,7 +405,7 @@
 
      default: tlsv1,tlsv1.1,tlsv1.2
   -->
-  <X-PRE-PROCESS cmd="set" data="sip_tls_version=tlsv1"/>
+  <X-PRE-PROCESS cmd="set" data="sip_tls_version=tlsv1,tlsv1.1,tlsv1.2"/>
 
   <!--
      TLS cipher suite: default ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH
@@ -427,11 +424,26 @@
   <X-PRE-PROCESS cmd="set" data="internal_tls_port=5061"/>
   <X-PRE-PROCESS cmd="set" data="internal_ssl_enable=false"/>
 
-
   <!-- External SIP Profile -->
   <X-PRE-PROCESS cmd="set" data="external_auth_calls=false"/>
   <X-PRE-PROCESS cmd="set" data="external_sip_port=5060"/>
   <X-PRE-PROCESS cmd="set" data="external_tls_port=5081"/>
   <X-PRE-PROCESS cmd="set" data="external_ssl_enable=false"/>
+
+  <!-- Video Settings -->
+  <!-- Setting the max bandwdith -->
+  <X-PRE-PROCESS cmd="set" data="rtp_video_max_bandwidth_in=1mb"/>
+  <X-PRE-PROCESS cmd="set" data="rtp_video_max_bandwidth_out=1mb"/>
+
+  <!-- WebRTC Video -->
+  <!-- Suppress CNG for WebRTC Audio -->
+  <X-PRE-PROCESS cmd="set" data="suppress_cng=true"/>
+  <!-- Enable liberal DTMF for those that can't get it right -->
+  <X-PRE-PROCESS cmd="set" data="rtp_liberal_dtmf=true"/>
+  <!-- Helps with WebRTC Audio -->
+
+  <!-- Stock Video Avatars -->
+  <X-PRE-PROCESS cmd="set" data="video_mute_png=$${images_dir}/default-mute.png"/>
+  <X-PRE-PROCESS cmd="set" data="video_no_avatar_png=$${images_dir}/default-avatar.png"/>
 
 </include>

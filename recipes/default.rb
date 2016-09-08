@@ -185,7 +185,7 @@ logrotate_app 'tomcat7' do
   create "644 tomcat7 root"
 end
 
-{ "external.xml" => "/opt/freeswitch/conf/sip_profiles/external.xml" }.each do |k,v|
+{ "external.xml" => "/opt/freeswitch/etc/freeswitch/sip_profiles/external.xml" }.each do |k,v|
   cookbook_file v do
     source k
     group "daemon"
@@ -195,7 +195,7 @@ end
   end
 end
 
-template "/opt/freeswitch/conf/vars.xml" do
+template "/opt/freeswitch/etc/freeswitch/vars.xml" do
   source "vars.xml.erb"
   group "daemon"
   owner "freeswitch"
