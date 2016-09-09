@@ -21,7 +21,7 @@ recordings = Dir.glob("/var/bigbluebutton/recording/raw/*") \
     .map{ |r| File.basename(r) } \
     .select{ |r| (r =~ /\w+-\d+/ && \
                   record_id_to_date(r) < recording_raw_max_retention && \
-                  ! Dir.glob("/var/bigbluebutton/published/**/#{r}").empty?) } \
+                  ! Dir.glob(["/var/bigbluebutton/published/**/#{r}", "/var/bigbluebutton/unpublished/**/#{r}"]).empty?) } \
     .sort{ |a,b| record_id_to_timestamp(a) <=> record_id_to_timestamp(b) }
 
 if ! recordings.empty?

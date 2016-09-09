@@ -11,6 +11,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
+require 'nokogiri'
+
 ruby_block "check system architecture" do
   block do
     raise "This recipe requires a 64 bits machine"
