@@ -58,12 +58,12 @@
       affect the sip authentication.  Please review conf/directory/default.xml for more
       information on this topic.
   -->
-  <X-PRE-PROCESS cmd="set" data="local_ip_v4=<%= @external_ip %>"/>
+  <X-PRE-PROCESS cmd="set" data="external_ip_v4=<%= @external_ip %>"/>
 
   <X-PRE-PROCESS cmd="set" data="domain=$${local_ip_v4}"/>
   <X-PRE-PROCESS cmd="set" data="domain_name=$${domain}"/>
   <X-PRE-PROCESS cmd="set" data="hold_music=local_stream://moh"/>
-  <X-PRE-PROCESS cmd="set" data="use_profile=external"/>
+  <X-PRE-PROCESS cmd="set" data="use_profile=internal"/>
   <X-PRE-PROCESS cmd="set" data="rtp_sdes_suites=AEAD_AES_256_GCM_8|AEAD_AES_128_GCM_8|AES_CM_256_HMAC_SHA1_80|AES_CM_192_HMAC_SHA1_80|AES_CM_128_HMAC_SHA1_80|AES_CM_256_HMAC_SHA1_32|AES_CM_192_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_32|AES_CM_128_NULL_AUTH"/>
   <!--
       Enable ZRTP globally you can override this on a per channel basis
@@ -257,8 +257,8 @@
        127 - BV32
 
   -->
-  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=OPUS,speex@16000h@20i,speex@8000h@20i,G722,PCMU,PCMA,VP8"/>
-  <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=OPUS,speex@16000h@20i,G722,PCMU,PCMA,VP8"/>
+  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=OPUS,speex@16000h@20i,speex@8000h@20i,G7221@32000h,G7221@16000h,G722,PCMU,PCMA,GSM"/>
+  <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=speex@16000h@20i,G722,PCMU,PCMA,GSM"/>
 
   <!--
       xmpp_client_profile and xmpp_server_profile
@@ -281,7 +281,7 @@
        use different addresses where this variable appears.
        Used by: dingaling.conf.xml
   -->
-  <X-PRE-PROCESS cmd="set" data="bind_server_ip=auto"/>
+  <X-PRE-PROCESS cmd="set" data="bind_server_ip=$${external_ip_v4}"/>
 
   <!-- NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE
        
@@ -299,7 +299,7 @@
        If unspecified, the bind_server_ip value is used.
        Used by: sofia.conf.xml dingaling.conf.xml
   -->
-  <X-PRE-PROCESS cmd="set" data="external_rtp_ip=stun:stun.freeswitch.org"/>
+  <X-PRE-PROCESS cmd="set" data="external_rtp_ip=$${external_ip_v4}"/>
 
   <!-- external_sip_ip
       Used as the public IP address for SDP.
@@ -312,7 +312,7 @@
        If unspecified, the bind_server_ip value is used.
        Used by: sofia.conf.xml dingaling.conf.xml
   -->
-  <X-PRE-PROCESS cmd="set" data="external_sip_ip=stun:stun.freeswitch.org"/>
+  <X-PRE-PROCESS cmd="set" data="external_sip_ip=$${external_ip_v4}"/>
 
   <!-- unroll-loops
        Used to turn on sip loopback unrolling.
