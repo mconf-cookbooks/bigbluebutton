@@ -10,6 +10,7 @@ default['bbb']['bigbluebutton']['repo_url'] = "http://ubuntu.bigbluebutton.org/t
 default['bbb']['bigbluebutton']['key_url'] = "http://ubuntu.bigbluebutton.org/bigbluebutton.asc"
 default['bbb']['bigbluebutton']['components'] = ["bigbluebutton-trusty" , "main"]
 default['bbb']['bigbluebutton']['package_name'] = "bigbluebutton"
+default['bbb']['bigbluebutton']['upgrade_dependencies'] = true
 
 default['bbb']['recording']['rebuild'] = []
 default['bbb']['recording']['playback_formats'] = "presentation"

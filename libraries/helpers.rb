@@ -83,12 +83,18 @@ module BigBlueButton
     def get_installed_bigbluebutton_packages(repo)
       hostname = URI.parse(repo).hostname
       
-      a = `grep -e "^Package: " -e "^Version: " /var/lib/apt/lists/#{hostname}*-amd64_Packages`.split("\n").collect {|x| x.sub(/^Package: |^Version: /, "")}
+      a = `grep -e "^Package: " -e "^Version: " /var/lib/apt/lists/#{hostname}*-amd64_Packages`.split("\n").collect{ |x| x.sub(/^Package: |^Version: /, "") }
       Hash[a.each_slice(2).to_a]
     end
     
     def get_installed_packages
       `dpkg --get-selections | grep -v deinstall`.split().reject {|x| x == "install"}
+    end
+    
+    def get_bigbluebutton_dependencies(package_name)
+      deps = `apt-rdepends #{package_name} | grep -E '^[^ ]'`.split("\n")
+      auto = `apt-mark showauto`.split("\n")
+      Hash[deps.collect!{ |pkg| [ pkg, auto.include?(pkg) ? :auto : :manual ] }]
     end
   end
 end

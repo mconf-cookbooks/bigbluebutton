@@ -79,29 +79,61 @@ package node['bbb']['bigbluebutton']['package_name'] do
   notifies :run, "execute[restart bigbluebutton]", :delayed
 end
 
+package "apt-rdepends"
+
 ruby_block "upgrade dependencies recursively" do
   block do
     bbb_repo = node['bbb']['bigbluebutton']['repo_url']
+    # load packages installed by the bigbluebutton repository
     bbb_packages = get_installed_bigbluebutton_packages(bbb_repo)
+    # load all packages installed
     all_packages = get_installed_packages()
     upgrade_list = []
+    # set the versions available on the repository - the exact versions are going to be installed
     bbb_packages.each do |pkg, version|
       if all_packages.include? pkg
         upgrade_list << "#{pkg}=#{version}"
       end
     end
 
+    # dependencies aren't upgraded by default, so we need a specific procedure for that
+    reset_auto = []
+    if node['bbb']['bigbluebutton']['upgrade_dependencies']
+      bbb_package_name = node['bbb']['bigbluebutton']['package_name']
+      # load all dependencies of the bigbluebutton package
+      bbb_deps = get_bigbluebutton_dependencies(bbb_package_name)
+      
+      # load the upgrades available, and insert to the upgrade_list the dependencies that we need to update
+      command = "apt-get --dry-run --show-upgraded upgrade"
+      to_upgrade = `#{command}`.split("\n").select { |l| l.start_with? "Conf" }.collect { |l| l.split()[1] }
+      upgrade_list += (bbb_deps.keys - bbb_packages.keys) & to_upgrade
+
+      # get the list of packages marked as automatically installed, so we can upgrade and reset the mark later
+      reset_auto = bbb_deps.select { |key, value| value == :auto }.keys & to_upgrade
+    end
+
+    # check if any package will be upgraded, so we need to restart the service
     command = "apt-get --dry-run --show-upgraded install #{upgrade_list.join(' ')}"
     to_upgrade = `#{command}`.split("\n").select { |l| l.start_with? "Inst" }.collect { |l| l.split()[1] }
     restart_required = ! to_upgrade.empty?
 
+    # run the upgrade
     command = "DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::='--force-confnew' -y --force-yes install #{upgrade_list.join(' ')}"
     Chef::Log.info "Running: #{command}"
     system(command)
-    status = $?
-    if not status.success?
-      raise "Couldn't upgrade the dependencies recursively"
+    upgrade_status = $?
+
+    if ! reset_auto.empty?
+      # reset the automatically installed mark in the packages
+      command = "apt-mark auto #{reset_auto.join(' ')}"
+      Chef::Log.info "Running: #{command}"
+      system(command)
+      status = $?
+      Chef::Log.error "Couldn't reset properly the list of automatically installed packages" if ! status.success?
     end
+
+    # even if the upgrade fails, we reset the automatically installed mark BEFORE raising an exception
+    raise "Couldn't upgrade the dependencies recursively" if ! upgrade_status.success?
 
     resources(:ruby_block => "define bigbluebutton properties").run_action(:run)
     if restart_required
