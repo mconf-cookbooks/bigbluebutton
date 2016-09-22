@@ -8,6 +8,7 @@
 
 default['bbb']['bigbluebutton']['repo_url'] = "http://ubuntu.bigbluebutton.org/trusty-090"
 default['bbb']['bigbluebutton']['key_url'] = "http://ubuntu.bigbluebutton.org/bigbluebutton.asc"
+default['bbb']['bigbluebutton']['dist'] = "trusty"
 default['bbb']['bigbluebutton']['components'] = ["bigbluebutton-trusty" , "main"]
 default['bbb']['bigbluebutton']['package_name'] = "bigbluebutton"
 
