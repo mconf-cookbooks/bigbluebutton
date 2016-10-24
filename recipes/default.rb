@@ -361,6 +361,7 @@ end
 execute "set bigbluebutton ip" do
   user "root"
   command lazy { "bbb-conf --setip #{node['bbb']['server_domain']}" }
+  ignore_failure node['bbb']['ignore_restart_failure']
   action :nothing
   notifies :run, "execute[restart bigbluebutton]", :delayed
 end
@@ -376,6 +377,7 @@ execute "clean bigbluebutton" do
   user "root"
   # use --restart instead of --clean so it keeps the logs
   command "bbb-conf --restart"
+  ignore_failure node['bbb']['ignore_restart_failure']
   action :nothing
 end
 

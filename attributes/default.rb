@@ -30,6 +30,7 @@ default['bbb']['recording_raw_retention']['logrotate']['frequency'] = 'monthly'
 default['bbb']['recording_raw_retention']['logrotate']['rotate'] = 6
 default['bbb']['recording_raw_retention']['logrotate']['size'] = nil
 default['bbb']['clean_recordings_data']['enabled'] = false
+default['bbb']['ignore_restart_failure'] = false
 
 default['bbb']['ssl']['enabled'] = false
 # see http://docs.bigbluebutton.org/install/install.html#configure-nginx-http
