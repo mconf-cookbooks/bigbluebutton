@@ -36,7 +36,8 @@ include_recipe "ffmpeg"
 # add ubuntu repo
 apt_repository "ubuntu" do
   uri "http://archive.ubuntu.com/ubuntu/"
-  components ["trusty" , "multiverse"]
+  distribution "trusty"
+  components ["multiverse"]
 end
 
 package "software-properties-common"
@@ -61,6 +62,7 @@ package "wget"
 apt_repository node['bbb']['bigbluebutton']['package_name'] do
   key node['bbb']['bigbluebutton']['key_url']
   uri node['bbb']['bigbluebutton']['repo_url']
+  distribution node['bbb']['bigbluebutton']['dist']
   components node['bbb']['bigbluebutton']['components']
   notifies :run, 'execute[apt-get update]', :immediately
 end
