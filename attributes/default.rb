@@ -8,6 +8,7 @@
 
 default['bbb']['bigbluebutton']['repo_url'] = "http://ubuntu.bigbluebutton.org/trusty-090"
 default['bbb']['bigbluebutton']['key_url'] = "http://ubuntu.bigbluebutton.org/bigbluebutton.asc"
+default['bbb']['bigbluebutton']['dist'] = "trusty"
 default['bbb']['bigbluebutton']['components'] = ["bigbluebutton-trusty" , "main"]
 default['bbb']['bigbluebutton']['package_name'] = "bigbluebutton"
 default['bbb']['bigbluebutton']['upgrade_dependencies'] = true
@@ -30,6 +31,7 @@ default['bbb']['recording_raw_retention']['logrotate']['frequency'] = 'monthly'
 default['bbb']['recording_raw_retention']['logrotate']['rotate'] = 6
 default['bbb']['recording_raw_retention']['logrotate']['size'] = nil
 default['bbb']['clean_recordings_data']['enabled'] = false
+default['bbb']['ignore_restart_failure'] = false
 
 default['bbb']['ssl']['enabled'] = false
 # see http://docs.bigbluebutton.org/install/install.html#configure-nginx-http

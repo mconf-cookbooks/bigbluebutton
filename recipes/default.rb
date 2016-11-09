@@ -11,6 +11,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
+require 'nokogiri'
+
 ruby_block "check system architecture" do
   block do
     raise "This recipe requires a 64 bits machine"
@@ -34,7 +36,8 @@ include_recipe "ffmpeg"
 # add ubuntu repo
 apt_repository "ubuntu" do
   uri "http://archive.ubuntu.com/ubuntu/"
-  components ["trusty" , "multiverse"]
+  distribution "trusty"
+  components ["multiverse"]
 end
 
 package "software-properties-common"
@@ -59,6 +62,7 @@ package "wget"
 apt_repository node['bbb']['bigbluebutton']['package_name'] do
   key node['bbb']['bigbluebutton']['key_url']
   uri node['bbb']['bigbluebutton']['repo_url']
+  distribution node['bbb']['bigbluebutton']['dist']
   components node['bbb']['bigbluebutton']['components']
   notifies :run, 'execute[apt-get update]', :immediately
 end
@@ -389,6 +393,7 @@ end
 execute "set bigbluebutton ip" do
   user "root"
   command lazy { "bbb-conf --setip #{node['bbb']['server_domain']}" }
+  ignore_failure node['bbb']['ignore_restart_failure']
   action :nothing
   notifies :run, "execute[restart bigbluebutton]", :delayed
 end
@@ -404,6 +409,7 @@ execute "clean bigbluebutton" do
   user "root"
   # use --restart instead of --clean so it keeps the logs
   command "bbb-conf --restart"
+  ignore_failure node['bbb']['ignore_restart_failure']
   action :nothing
 end
 
