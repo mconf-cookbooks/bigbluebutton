@@ -434,16 +434,20 @@ node['bbb']['recording']['rebuild'].each do |record_id|
 end
 node.set['bbb']['recording']['rebuild'] = []
 
-[ "sip.nginx", "sip-secure.nginx"] .each do |conf_nginx|
-  template conf_nginx do
-    path "/etc/bigbluebutton/nginx/#{conf_nginx}"
-    source "#{conf_nginx}.erb"
-    mode "0644"
-    variables(
-      lazy {{ :external_ip => node['bbb']['external_ip'] }}
-    )
-    notifies :reload, "service[nginx]", :immediately
-  end
+template "sip.nginx" do
+  path "/etc/bigbluebutton/nginx/sip.nginx"
+  source "sip.nginx.erb"
+  mode "0644"
+  variables(
+    lazy {{ :external_ip => node['bbb']['external_ip'],
+            :secure => node['bbb']['ssl']['enabled'] }}
+  )
+  notifies :reload, "service[nginx]", :immediately
+end
+
+cookbook_file "/etc/bigbluebutton/nginx/sip-secure.nginx" do
+  action :delete
+  notifies :reload, "service[nginx]", :immediately
 end
 
 ruby_block "reset flag restart" do
