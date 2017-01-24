@@ -286,6 +286,15 @@ template "/etc/nginx/sites-available/bigbluebutton" do
   notifies :reload, "service[nginx]", :immediately
 end
 
+cookbook_file "/var/www/bigbluebutton-default/index.html" do
+  source "index.html"
+  if node['bbb']['demo']['enabled']
+    action :create
+  else
+    action :delete
+  end
+end
+
 package "bbb-demo" do
   if node['bbb']['demo']['enabled']
     action :upgrade
