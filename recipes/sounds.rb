@@ -34,16 +34,10 @@ ruby_block "update sounds" do
   block do
     Dir.chdir("/opt/freeswitch/etc/freeswitch/autoload_configs") do
       FileUtils.cp("conference.conf.xml", "conference.conf.xml.orig")
-      {
-        "sound_muted" => "muted-sound",
-        "sound_unmuted" => "unmuted-sound",
-        "sound_alone" => "alone-sound",
-        "sound_moh_sound" => "moh-sound"
-      }.each do |node_attr, sound_name|
-        sound_value = node['bbb']['freeswitch']['sounds'][node_attr]
-        `xmlstarlet ed -L -d "/configuration/profiles/profile/param[@name='#{sound_name}']" conference.conf.xml`
-        if sound_value.empty?
-          `xmlstarlet ed -L -s /configuration/profiles/profile -t elem -n paramTMP -v "" -i //paramTMP -t attr -n "name" -v "#{sound_name}" -i //paramTMP -t attr -n "value" -v "#{sound_value}" -r //paramTMP -v param conference.conf.xml`
+      node['bbb']['freeswitch']['sounds']['profile'].each do |param_name, param_value|
+        `xmlstarlet ed -L -d "/configuration/profiles/profile/param[@name='#{param_name}']" conference.conf.xml`
+        if ! param_value.empty?
+          `xmlstarlet ed -L -s /configuration/profiles/profile -t elem -n paramTMP -v "" -i //paramTMP -t attr -n "name" -v "#{param_name}" -i //paramTMP -t attr -n "value" -v "#{param_value}" -r //paramTMP -v param conference.conf.xml`
         end
       end
       if ! FileUtils.identical?("conference.conf.xml", "conference.conf.xml.orig")
