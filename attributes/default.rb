@@ -54,3 +54,15 @@ default['ffmpeg']['compile_flags'] = [ "--enable-version3",
                                        "--enable-postproc",
                                        "--enable-libvorbis",
                                        "--enable-libvpx" ]
+
+default['bbb']['freeswitch']['sounds']['dir'] = "/opt/freeswitch/share/freeswitch/sounds"
+default['bbb']['freeswitch']['sounds']['repo'] = "http://files.freeswitch.org/releases/sounds"
+# default['bbb']['freeswitch']['sounds']['frequency'] = [ "48000", "32000", "16000", "8000" ]
+default['bbb']['freeswitch']['sounds']['frequency'] = [ "48000", "32000", "16000", "8000" ]
+default['bbb']['freeswitch']['sounds']['name_version'] = {}
+default['bbb']['freeswitch']['sounds']['prefix'] = "$${sounds_dir}/en/us/callie"
+default['bbb']['freeswitch']['sounds']['sound_muted'] = ""
+default['bbb']['freeswitch']['sounds']['sound_unmuted'] = ""
+default['bbb']['freeswitch']['sounds']['sound_alone'] = ""
+default['bbb']['freeswitch']['sounds']['sound_moh_sound'] = ""
+

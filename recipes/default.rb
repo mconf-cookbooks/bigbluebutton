@@ -221,6 +221,8 @@ logrotate_app 'tomcat7' do
   create "644 tomcat7 root"
 end
 
+include_recipe "bigbluebutton::sounds"
+
 { "external.xml" => "/opt/freeswitch/etc/freeswitch/sip_profiles/external.xml" }.each do |k,v|
   cookbook_file v do
     source k
@@ -237,7 +239,8 @@ template "/opt/freeswitch/etc/freeswitch/vars.xml" do
   owner "freeswitch"
   mode "0640"
   variables(
-    lazy {{ :external_ip => node['bbb']['external_ip'] == node['bbb']['internal_ip']? "auto-nat": node['bbb']['external_ip'] }}
+    lazy {{ :external_ip => node['bbb']['external_ip'] == node['bbb']['internal_ip']? "auto-nat": node['bbb']['external_ip'],
+            :sound_prefix => node['bbb']['freeswitch']['sounds']['prefix'] }}
   )
   notifies :run, "execute[restart bigbluebutton]", :delayed
 end
