@@ -498,3 +498,21 @@ cron "clean-recordings-data-cron" do
   minute "0"
   command "/usr/local/bigbluebutton/core/scripts/clean-recordings-data.rb"
 end
+
+ruby_block "set default video quality" do
+  block do
+    filename = "/var/www/bigbluebutton/client/conf/profiles.xml"
+    if File.exist? filename
+      doc = Nokogiri::XML::Document.parse(File.open(filename), nil, "UTF-8")
+      doc.xpath("//profile[@default='true']").each do |node|
+        node.remove_attribute("default")
+      end
+      doc.xpath("//profile[@id='#{node['bbb']['default_video_quality']}']").each do |node|
+        node["default"] = "true"
+      end
+      xml_file = File.new(filename, "w")
+      xml_file.write(doc.to_xml(:indent => 2))
+      xml_file.close
+    end
+  end
+end
