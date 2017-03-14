@@ -221,26 +221,146 @@ end
 
 include_recipe "bigbluebutton::sounds"
 
-{ "external.xml" => "/opt/freeswitch/etc/freeswitch/sip_profiles/external.xml" }.each do |k,v|
-  cookbook_file v do
-    source k
-    group "daemon"
-    owner "freeswitch"
-    mode "0640"
-    notifies :run, "execute[restart bigbluebutton]", :delayed
-  end
-end
+ruby_block "update freeswitch config files" do
+  block do
+    xml_filename = "/opt/freeswitch/etc/freeswitch/vars.xml"
+    if File.exists? xml_filename
+      doc = Nokogiri::XML(File.open(xml_filename)) { |x| x.noblanks }
+      
+      # http://docs.bigbluebutton.org/1.1/install.html#audio-not-working
+      xml_node = doc.at_xpath("//X-PRE-PROCESS[@cmd='set' and starts-with(@data, 'local_ip_v4=')]")
+      xml_node.remove if ! xml_node.nil?
+      xml_node = doc.at_xpath("//X-PRE-PROCESS[@cmd='set' and starts-with(@data, 'external_ip_v4=')]")
+      xml_node.remove if ! xml_node.nil?
 
-template "/opt/freeswitch/etc/freeswitch/vars.xml" do
-  source "vars.xml.erb"
-  group "daemon"
-  owner "freeswitch"
-  mode "0640"
-  variables(
-    lazy {{ :external_ip => node['bbb']['external_ip'] == node['bbb']['internal_ip']? "auto-nat": node['bbb']['external_ip'],
-            :sound_prefix => node['bbb']['freeswitch']['sounds']['prefix'] }}
-  )
-  notifies :run, "execute[restart bigbluebutton]", :delayed
+      xml_node = doc.at_xpath("//X-PRE-PROCESS[@cmd='set' and starts-with(@data, 'bind_server_ip=')]")
+      xml_node["data"] = "bind_server_ip=#{node['bbb'][node['bbb']['freeswitch']['interface']]}"
+      xml_node = doc.at_xpath("//X-PRE-PROCESS[@cmd='set' and starts-with(@data, 'external_rtp_ip=')]")
+      xml_node["data"] = "external_rtp_ip=#{node['bbb'][node['bbb']['freeswitch']['interface']]}"
+      xml_node = doc.at_xpath("//X-PRE-PROCESS[@cmd='set' and starts-with(@data, 'external_sip_ip=')]")
+      xml_node["data"] = "external_sip_ip=#{node['bbb'][node['bbb']['freeswitch']['interface']]}"
+
+      xml_node = doc.at_xpath("//X-PRE-PROCESS[@cmd='set' and starts-with(@data, 'sound_prefix=')]")
+      xml_node["data"] = "sound_prefix=#{node['bbb']['freeswitch']['sounds']['prefix']}"
+
+      save_xml(xml_filename, doc, true)
+    end
+    
+    xml_filename = "/opt/freeswitch/conf/sip_profiles/external.xml"
+    if File.exists? xml_filename
+      doc = Nokogiri::XML(File.open(xml_filename)) { |x| x.noblanks }
+
+      xml_node = doc.at_xpath("//param[@name='ext-rtp-ip']")
+      xml_node["value"] = "$${external_rtp_ip}"
+
+      xml_node = doc.at_xpath("//param[@name='ext-sip-ip']")
+      xml_node["value"] = "$${external_sip_ip}"
+
+      xml_node = doc.at_xpath("//param[@name='ws-binding']")
+      if node['bbb']['ssl']['enabled']
+        xml_node.remove if ! xml_node.nil?
+      else
+        if xml_node.nil?
+          xml_node = Nokogiri::XML::Node.new "param", doc
+          xml_node["name"] = "ws-binding"
+          xml_node["value"] = ":5066"
+          doc.at("/profile/settings") << xml_node
+        else
+          xml_node["value"] = ":5066"
+        end
+      end
+
+      xml_node = doc.at_xpath("//param[@name='wss-binding']")
+      if node['bbb']['ssl']['enabled']
+        if xml_node.nil?
+          xml_node = Nokogiri::XML::Node.new "param", doc
+          xml_node["name"] = "wss-binding"
+          xml_node["value"] = ":7443"
+          doc.at("/profile/settings") << xml_node
+        else
+          xml_node["value"] = ":7443"
+        end
+      else
+        xml_node.remove if ! xml_node.nil?
+      end
+
+      save_xml(xml_filename, doc, true)
+    end
+    
+    xml_filename = "/opt/freeswitch/conf/sip_profiles/internal.xml"
+    if File.exists? xml_filename
+      doc = Nokogiri::XML(File.open(xml_filename)) { |x| x.noblanks }
+
+      xml_node = doc.at_xpath("//param[@name='ws-binding']")
+      xml_node.remove if ! xml_node.nil?
+      xml_node = doc.at_xpath("//param[@name='wss-binding']")
+      xml_node.remove if ! xml_node.nil?
+
+      save_xml(xml_filename, doc, true)
+    end
+
+    xml_filename = "/var/lib/tomcat7/webapps/bigbluebutton/WEB-INF/spring/turn-stun-servers.xml"
+    if File.exists? xml_filename
+      doc = Nokogiri::XML(File.open(xml_filename)) { |x| x.noblanks }
+
+      doc.xpath("//xmlns:bean[@class='org.bigbluebutton.web.services.turn.StunServer']").each do |xml_node|
+        xml_node.remove
+      end
+      doc.xpath("//xmlns:bean[@class='org.bigbluebutton.web.services.turn.StunTurnService']/xmlns:property[@name='stunServers']/xmlns:set/xmlns:ref").each do |ref|
+        ref.remove
+      end
+
+      node['bbb']['stun_servers'].each_with_index do |stun_server, index|
+        id = "stun#{index+1}"
+        bean = Nokogiri::XML::Node.new "bean", doc
+        bean["id"] = id
+        bean["class"] = "org.bigbluebutton.web.services.turn.StunServer"
+        constructor = Nokogiri::XML::Node.new "constructor-arg", doc
+        constructor["index"] = "0"
+        constructor["value"] = "stun:#{stun_server}"
+        bean << constructor
+        doc.at("/xmlns:beans") << bean
+
+        ref = Nokogiri::XML::Node.new "ref", doc
+        ref["bean"] = id
+        doc.at("/xmlns:beans/xmlns:bean[@class='org.bigbluebutton.web.services.turn.StunTurnService']/xmlns:property[@name='stunServers']/xmlns:set") << ref
+      end
+
+      doc.xpath("//xmlns:bean[@class='org.bigbluebutton.web.services.turn.RemoteIceCandidate']").each do |xml_node|
+        xml_node.remove
+      end
+      doc.xpath("//xmlns:bean[@class='org.bigbluebutton.web.services.turn.StunTurnService']/xmlns:property[@name='remoteIceCandidates']/xmlns:set/xmlns:ref").each do |ref|
+        ref.remove
+      end
+
+      node['bbb']['remote_ice_candidates'].each_with_index do |candidate, index|
+        id = "iceCandidate#{index+1}"
+        bean = Nokogiri::XML::Node.new "bean", doc
+        bean["id"] = id
+        bean["class"] = "org.bigbluebutton.web.services.turn.RemoteIceCandidate"
+        constructor = Nokogiri::XML::Node.new "constructor-arg", doc
+        constructor["index"] = "0"
+        constructor["value"] = candidate
+        bean << constructor
+        doc.at("/xmlns:beans") << bean
+
+        ref = Nokogiri::XML::Node.new "ref", doc
+        ref["bean"] = id
+        doc.at("/xmlns:beans/xmlns:bean[@class='org.bigbluebutton.web.services.turn.StunTurnService']/xmlns:property[@name='remoteIceCandidates']/xmlns:set") << ref
+      end
+
+      save_xml(xml_filename, doc, true)
+    end
+    
+    filename = "/usr/share/red5/webapps/sip/WEB-INF/bigbluebutton-sip.properties"
+    if File.exists? filename
+      new_filename = "/tmp/#{File.basename(filename)}"
+      FileUtils.cp filename, new_filename
+      command = "sed -i 's|^bbb.sip.app.ip=.*|bbb.sip.app.ip=#{get_freeswitch_listen_ip()}|g' #{new_filename}"
+      `#{command}`
+      compare_and_replace_file(new_filename, filename, true)
+    end
+  end
 end
 
 remote_directory "/etc/nginx/ssl" do
@@ -281,7 +401,7 @@ template "/etc/nginx/sites-available/bigbluebutton" do
       :dhparam_file => node['bbb']['ssl']['certificates']['dhparam_file']
     }}
   )
-  notifies :reload, "service[nginx]", :immediately
+  notifies :restart, "service[nginx]", :immediately
 end
 
 cookbook_file "/var/www/bigbluebutton-default/index.html" do
@@ -326,8 +446,6 @@ end
     else
       action :purge
     end
-    # apt repo could not be building bbb-webhooks yet
-    ignore_failure true if pkg == "bbb-webhooks"
   end
 end
 
@@ -357,28 +475,17 @@ end
       restart_required = false
       
       if File.exist? filename
-        doc = Nokogiri::XML(File.open(filename))
+        new_filename = "/tmp/#{File.basename(filename)}"
+        FileUtils.cp filename, new_filename
+        
+        doc = Nokogiri::XML(File.open(filename)) { |x| x.noblanks }
         nodes = doc.xpath(expr)
         
-        if nodes.length > 0
-          nodes.each do |node|
-            if node.content.to_i != max_history
-              Chef::Log.info "Changing log MaxHistory from #{node.content.to_i} to #{max_history} on #{filename}"
-              node.content = max_history
-
-              xml_file = File.new(filename, "w")
-              xml_file.write(doc.to_xml(:indent => 2))
-              xml_file.close
-              
-              restart_required = true
-            end
-          end
+        nodes.each do |node|
+          node.content = max_history
         end
-      end
-      
-      if restart_required
-        self.notifies :run, "execute[restart bigbluebutton]", :delayed
-        self.resolve_notification_references
+        
+        compare_and_replace_file(new_filename, filename, true)
       end
     end
   end
@@ -389,7 +496,6 @@ execute "restart bigbluebutton" do
   command "echo 'Restarting'"
   action :nothing
   notifies :run, "execute[set bigbluebutton ip]", :delayed
-  notifies :run, "execute[enable webrtc]", :delayed
   notifies :run, "execute[clean bigbluebutton]", :delayed
 end
 
@@ -405,14 +511,6 @@ execute "set bigbluebutton ip" do
   command lazy { "bbb-conf --setip #{node['bbb']['server_domain']}" }
   ignore_failure node['bbb']['ignore_restart_failure']
   action :nothing
-  notifies :run, "execute[restart bigbluebutton]", :delayed
-end
-
-execute "enable webrtc" do
-  user "root"
-  command "bbb-conf --enablewebrtc"
-  action :nothing
-  notifies :create, "template[sip.nginx]", :immediately
 end
 
 execute "clean bigbluebutton" do
@@ -437,7 +535,7 @@ template "sip.nginx" do
   source "sip.nginx.erb"
   mode "0644"
   variables(
-    lazy {{ :external_ip => node['bbb']['external_ip'],
+    lazy {{ :listen_ip => get_freeswitch_websocket_listen_ip(),
             :secure => node['bbb']['ssl']['enabled'] }}
   )
   notifies :reload, "service[nginx]", :immediately
@@ -502,15 +600,16 @@ ruby_block "set default video quality" do
     filename = "/var/www/bigbluebutton/client/conf/profiles.xml"
     if File.exist? filename
       doc = Nokogiri::XML::Document.parse(File.open(filename), nil, "UTF-8")
-      doc.xpath("//profile[@default='true']").each do |node|
-        node.remove_attribute("default")
+      default_node = doc.at_xpath("//profile[@id='#{node['bbb']['default_video_quality']}']")
+      if ! default_node.nil?
+        doc.xpath("//profile[@default='true']").each do |node|
+          node.remove_attribute("default")
+        end
+        default_node["default"] = "true"
+        xml_file = File.new(filename, "w")
+        xml_file.write(doc.to_xml(:indent => 2))
+        xml_file.close
       end
-      doc.xpath("//profile[@id='#{node['bbb']['default_video_quality']}']").each do |node|
-        node["default"] = "true"
-      end
-      xml_file = File.new(filename, "w")
-      xml_file.write(doc.to_xml(:indent => 2))
-      xml_file.close
     end
   end
 end

@@ -33,6 +33,9 @@ default['bbb']['recording_raw_retention']['logrotate']['size'] = nil
 default['bbb']['clean_recordings_data']['enabled'] = false
 default['bbb']['ignore_restart_failure'] = false
 default['bbb']['default_video_quality'] = "medium"
+default['bbb']['stun_servers'] = [ "stun.l.google.com:19302", "stun1.l.google.com:19302", "stun2.l.google.com:19302", "stun3.l.google.com:19302", "stun4.l.google.com:19302" ]
+# use this to artificially add ice candidates to the remote SDP
+default['bbb']['remote_ice_candidates'] = []
 
 default['bbb']['ssl']['enabled'] = false
 # see http://docs.bigbluebutton.org/install/install.html#configure-nginx-http
@@ -68,3 +71,6 @@ default['bbb']['freeswitch']['sounds']['profile'] = {
                                        "moh-sound" => "",
                                        "comfort-noise" => "false"
                                        }
+
+# set to external_ip or internal_ip
+default['bbb']['freeswitch']['interface'] = "external_ip"
