@@ -86,6 +86,8 @@ module BigBlueButton
     
     def get_internal_ip()
       ip = Socket.ip_address_list.detect{ |intf| intf.ipv4_private? }
+      # if there's no private ipv4 we return any other ipv4 different than loopback
+      ip = Socket.ip_address_list.detect{ |intf| intf.ipv4? && ! intf.ipv4_loopback? } if ip.nil?
       ip.ip_address
     end
     
