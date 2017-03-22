@@ -356,7 +356,10 @@ ruby_block "update freeswitch config files" do
     if File.exists? filename
       new_filename = "/tmp/#{File.basename(filename)}"
       FileUtils.cp filename, new_filename
-      command = "sed -i 's|^bbb.sip.app.ip=.*|bbb.sip.app.ip=#{get_freeswitch_listen_ip()}|g' #{new_filename}"
+      freeswitch_ip = get_freeswitch_listen_ip()
+      command = "sed -i 's|^bbb.sip.app.ip=.*|bbb.sip.app.ip=#{freeswitch_ip}|g' #{new_filename}"
+      `#{command}`
+      command = "sed -i 's|^freeswitch.ip=.*|freeswitch.ip=#{freeswitch_ip}|g' #{new_filename}"
       `#{command}`
       compare_and_replace_file(new_filename, filename, true)
     end
