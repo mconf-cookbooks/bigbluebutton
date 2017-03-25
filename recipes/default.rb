@@ -109,6 +109,7 @@ ruby_block "upgrade dependencies recursively" do
       command = "apt-get --dry-run --show-upgraded upgrade"
       to_upgrade = `#{command}`.split("\n").select { |l| l.start_with? "Conf" }.collect { |l| l.split()[1] }
       upgrade_list += (bbb_deps.keys - bbb_packages.keys) & to_upgrade
+      upgrade_list << "libreoffice"
 
       # get the list of packages marked as automatically installed, so we can upgrade and reset the mark later
       reset_auto = bbb_deps.select { |key, value| value == :auto }.keys & to_upgrade
