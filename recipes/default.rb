@@ -324,6 +324,24 @@ ruby_block "update freeswitch config files" do
       `#{command}`
       compare_and_replace_file(new_filename, filename, true)
     end
+    
+    xml_filename = "/var/bigbluebutton/playback/presentation/0.9.0/playback.html"
+    if File.exists? xml_filename
+      doc = Nokogiri::HTML(File.open(xml_filename)) { |x| x.noblanks }
+      if ! node['bbb']['recording']['playback_copyright'].nil?
+        xml_node = doc.at_xpath("//div[@id='copyright']")
+        xml_node.inner_html = node['bbb']['recording']['playback_copyright'] if ! xml_node.nil?
+      end
+      if ! node['bbb']['recording']['playback_unavailable'].nil?
+        xml_node = doc.at_xpath("//p[@id='load-error-msg']")
+        xml_node.inner_html = node['bbb']['recording']['playback_unavailable'] if ! xml_node.nil?
+      end
+      if ! node['bbb']['recording']['playback_title'].nil?
+        xml_node = doc.at_xpath("//title")
+        xml_node.inner_html = node['bbb']['recording']['playback_title'] if ! xml_node.nil?
+      end
+      save_xml(xml_filename, doc, false)
+    end
   end
 end
 

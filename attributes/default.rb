@@ -15,6 +15,9 @@ default['bbb']['bigbluebutton']['upgrade_dependencies'] = true
 
 default['bbb']['recording']['rebuild'] = []
 default['bbb']['recording']['playback_formats'] = "presentation"
+default['bbb']['recording']['playback_copyright'] = nil
+default['bbb']['recording']['playback_unavailable'] = nil
+default['bbb']['recording']['playback_title'] = nil
 default['bbb']['demo']['enabled'] = false
 default['bbb']['check']['enabled'] = false
 default['bbb']['webhooks']['enabled'] = true
