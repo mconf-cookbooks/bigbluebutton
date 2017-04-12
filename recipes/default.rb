@@ -11,34 +11,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-ruby_block "check system architecture" do
-  block do
-    raise "This recipe requires a 64 bits machine"
-  end
-  only_if { node['kernel']['machine'] != "x86_64" }
-end
-
-include_recipe "bigbluebutton::gem-deps"
-
-execute "apt-get update"
-
-# purge ffmpeg package if we intend to install from source
-dpkg_package "ffmpeg" do
-  action :remove
-  only_if { node['ffmpeg']['install_method'] == :source }
-end
-
-include_recipe "libvpx" if node['ffmpeg']['install_method'] == :package
-include_recipe "ffmpeg"
-
-# add ubuntu repo
-apt_repository "ubuntu" do
-  uri "http://archive.ubuntu.com/ubuntu/"
-  distribution "trusty"
-  components ["multiverse"]
-end
-
-package "software-properties-common"
+include_recipe "bigbluebutton::pre-install"
 
 # add libreoffice repo
 apt_repository "libreoffice" do
@@ -53,17 +26,6 @@ apt_repository "ondrej-php" do
 end
 
 include_recipe "bigbluebutton::load-properties"
-
-package "wget"
-
-# add bigbluebutton repo
-apt_repository node['bbb']['bigbluebutton']['package_name'] do
-  key node['bbb']['bigbluebutton']['key_url']
-  uri node['bbb']['bigbluebutton']['repo_url']
-  distribution node['bbb']['bigbluebutton']['dist']
-  components node['bbb']['bigbluebutton']['components']
-  notifies :run, 'execute[apt-get update]', :immediately
-end
 
 # package response_file isn't working properly, that's why we have to accept the licenses with debconf-set-selections
 execute "accept mscorefonts license" do
@@ -80,8 +42,6 @@ package node['bbb']['bigbluebutton']['package_name'] do
   action :upgrade
   notifies :run, "execute[restart bigbluebutton]", :delayed
 end
-
-package "apt-rdepends"
 
 ruby_block "upgrade dependencies recursively" do
   block do
