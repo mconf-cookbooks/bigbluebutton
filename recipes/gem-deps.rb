@@ -10,7 +10,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-gem_prereqs = [ "zlib1g-dev" ]
+gem_prereqs = [ "zlib1g-dev", "liblzma-dev" ]
 
 gem_prereqs.each do |pkg|
   p = package "#{pkg}" do

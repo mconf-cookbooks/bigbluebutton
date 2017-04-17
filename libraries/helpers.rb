@@ -132,7 +132,7 @@ module BigBlueButton
           self.notifies :run, "execute[restart bigbluebutton]"
           self.resolve_notification_references
         end
-        FileUtils.cp new_file, "#{old_file}.#{Time.now.strftime('%Y%m%d%H%M%S')}"
+        FileUtils.cp old_file, "#{old_file}.#{Time.now.strftime('%Y%m%d%H%M%S')}"
         FileUtils.cp new_file, old_file
       end
     end
