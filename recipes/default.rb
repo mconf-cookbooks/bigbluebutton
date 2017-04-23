@@ -538,6 +538,11 @@ cookbook_file "/etc/bigbluebutton/nginx/sip-secure.nginx" do
   notifies :reload, "service[nginx]", :immediately
 end
 
+link '/etc/nginx/sites-enabled/bigbluebutton' do
+  to '/etc/nginx/sites-available/bigbluebutton'
+  notifies :reload, "service[nginx]", :immediately
+end
+
 ruby_block "reset flag restart" do
   block do
     node.set['bbb']['force_restart'] = false
