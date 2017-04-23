@@ -260,6 +260,16 @@ ruby_block "update freeswitch config files" do
       save_xml(xml_filename, doc, true)
     end
 
+    xml_filename = "/opt/freeswitch/conf/autoload_configs/event_socket.conf.xml"
+    if File.exists? xml_filename
+      doc = Nokogiri::XML(File.open(xml_filename)) { |x| x.noblanks }
+
+      xml_node = doc.at_xpath("//param[@name='listen-ip']")
+      xml_node["value"] = "127.0.0.1"
+
+      save_xml(xml_filename, doc, true)
+    end
+
     xml_filename = "/var/lib/tomcat7/webapps/bigbluebutton/WEB-INF/spring/turn-stun-servers.xml"
     if File.exists? xml_filename
       doc = Nokogiri::XML(File.open(xml_filename)) { |x| x.noblanks }
