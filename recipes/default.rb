@@ -352,6 +352,13 @@ ruby_block "update freeswitch config files" do
       end
       save_xml(xml_filename, doc, false)
     end
+    
+    filename = '/usr/local/bigbluebutton/core/scripts/bigbluebutton.yml'
+    config = YAML.load_file(filename)
+    config['playback_protocol'] = node['bbb']['ssl']['enabled'] ? "https" : "http"
+    File.open(filename,'w') do |h|
+       h.write config.to_yaml
+    end
   end
 end
 
