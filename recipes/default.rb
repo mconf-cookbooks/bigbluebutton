@@ -63,7 +63,6 @@ package "wget"
 apt_repository node['bbb']['bigbluebutton']['package_name'] do
   key node['bbb']['bigbluebutton']['key_url']
   uri node['bbb']['bigbluebutton']['repo_url']
-  distribution node['bbb']['bigbluebutton']['dist']
   components node['bbb']['bigbluebutton']['components']
   notifies :run, 'execute[apt-get update]', :immediately
 end
