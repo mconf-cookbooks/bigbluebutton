@@ -15,8 +15,11 @@ include_recipe "bigbluebutton::pre-install"
 
 # add libreoffice repo
 apt_repository "libreoffice" do
-  uri "ppa:libreoffice/libreoffice-4-4"
+  uri "http://ppa.launchpad.net/libreoffice/libreoffice-4-4/ubuntu/"
   distribution node['lsb']['codename']
+  components [ "main" ]
+  arch "amd64"
+  key "libreoffice.key" # 1378B444
 end
 
 # add php repo for libssl 1.0.2 needed for chrome 52
