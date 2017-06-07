@@ -77,3 +77,4 @@ default['bbb']['freeswitch']['sounds']['profile'] = {
 
 # set to external_ip or internal_ip
 default['bbb']['freeswitch']['interface'] = "external_ip"
+default['bbb']['freeswitch']['apply_candidate_acl'] = nil

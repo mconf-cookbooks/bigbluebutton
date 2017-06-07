@@ -248,6 +248,20 @@ ruby_block "update freeswitch config files" do
         xml_node.remove if ! xml_node.nil?
       end
 
+      xml_node = doc.at_xpath("//param[@name='apply-candidate-acl']")
+      if node['bbb']['freeswitch']['apply_candidate_acl'].nil?
+        xml_node.remove if ! xml_node.nil?
+      else
+        if xml_node.nil?
+          xml_node = Nokogiri::XML::Node.new "param", doc
+          xml_node["name"] = "apply-candidate-acl"
+          xml_node["value"] = node['bbb']['freeswitch']['apply_candidate_acl']
+          doc.at("/profile/settings") << xml_node
+        else
+          xml_node["value"] = node['bbb']['freeswitch']['apply_candidate_acl']
+        end
+      end
+
       save_xml(xml_filename, doc, true)
     end
     
