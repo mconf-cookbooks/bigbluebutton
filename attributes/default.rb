@@ -36,7 +36,7 @@ default['bbb']['recording_raw_retention']['logrotate']['size'] = nil
 default['bbb']['clean_recordings_data']['enabled'] = false
 default['bbb']['ignore_restart_failure'] = false
 default['bbb']['default_video_quality'] = "medium"
-default['bbb']['stun_servers'] = [ "stun.l.google.com:19302", "stun1.l.google.com:19302", "stun2.l.google.com:19302", "stun3.l.google.com:19302", "stun4.l.google.com:19302" ]
+default['bbb']['stun_servers'] = [ "stun.l.google.com:19302" ]
 # use this to artificially add ice candidates to the remote SDP
 default['bbb']['remote_ice_candidates'] = []
 
