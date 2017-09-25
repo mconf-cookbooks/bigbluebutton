@@ -12,7 +12,7 @@ maintainer_email "mconf@mconf.org"
 license          "MPL v2.0"
 description      "Installs a BigBlueButton server"
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
-version          "2.0.6"
+version          "2.0.7"
 supports         "ubuntu", "= 14.04"
 depends          "apt"
 depends          "ffmpeg"
