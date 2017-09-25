@@ -384,19 +384,32 @@ ruby_block "update freeswitch config files" do
   end
 end
 
-remote_directory "/etc/nginx/ssl" do
-  files_mode '0600'
-  source "ssl"
+directory "/etc/nginx/ssl" do
+  owner "root"
+  group "root"
+  mode "0600"
+  recursive true
+  action :create
+end
+
+service "nginx"
+
+[ node['bbb']['ssl']['certificate_file'], node['bbb']['ssl']['certificate_key_file'] ].each do |filename|
+  cookbook_file "/etc/nginx/ssl/#{filename}" do
+    source "ssl/#{filename}"
+    mode "0600"
+    action :create
+    only_if { ! filename.nil? && ! filename.empty? }
+    notifies :restart, "service[nginx]", :immediately
+  end
 end
 
 execute "generate diffie-hellman parameters" do
-  dhp_file = "/etc/nginx/ssl/#{node['bbb']['ssl']['certificates']['dhparam_file']}"
+  dhp_file = "/etc/nginx/ssl/#{node['bbb']['ssl']['dhparam_file']}"
   command "openssl dhparam -out #{dhp_file} 2048"
   only_if { node['bbb']['ssl']['enabled'] }
   creates dhp_file
 end
-
-service "nginx"
 
 ruby_block "update nginx server_names_hash" do
   block do
@@ -407,7 +420,7 @@ ruby_block "update nginx server_names_hash" do
       fe.write_file
     end
   end
-  notifies :reload, "service[nginx]", :immediately
+  notifies :restart, "service[nginx]", :immediately
 end
 
 template "/etc/nginx/sites-available/bigbluebutton" do
@@ -419,7 +432,7 @@ template "/etc/nginx/sites-available/bigbluebutton" do
       :secure => node['bbb']['ssl']['enabled'],
       :certificate_file => node['bbb']['ssl']['certificate_file'],
       :certificate_key_file => node['bbb']['ssl']['certificate_key_file'],
-      :dhparam_file => node['bbb']['ssl']['certificates']['dhparam_file']
+      :dhparam_file => node['bbb']['ssl']['dhparam_file']
     }}
   )
   notifies :restart, "service[nginx]", :immediately

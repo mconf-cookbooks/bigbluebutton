@@ -42,9 +42,9 @@ default['bbb']['remote_ice_candidates'] = []
 
 default['bbb']['ssl']['enabled'] = false
 # see http://docs.bigbluebutton.org/install/install.html#configure-nginx-http
-default['bbb']['ssl']['certificates']['certificate_file'] = ""       # .crt
-default['bbb']['ssl']['certificates']['certificate_key_file'] = ""   # .key
-default['bbb']['ssl']['certificates']['dhparam_file'] = "dhp-2048.pem"
+default['bbb']['ssl']['certificate_file'] = ""       # .crt
+default['bbb']['ssl']['certificate_key_file'] = ""   # .key
+default['bbb']['ssl']['dhparam_file'] = "dhp-2048.pem"
 
 # logrotate options
 # by default keeps one log file per day, during a week
