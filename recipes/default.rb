@@ -401,6 +401,7 @@ service "nginx"
     action :create
     only_if { ! filename.nil? && ! filename.empty? }
     notifies :restart, "service[nginx]", :immediately
+    ignore_failure true
   end
 end
 
