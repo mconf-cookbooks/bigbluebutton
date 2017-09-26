@@ -356,6 +356,16 @@ ruby_block "update freeswitch config files" do
       compare_and_replace_file(new_filename, filename, true)
     end
     
+    filename = "/var/lib/tomcat7/webapps/bigbluebutton/WEB-INF/classes/bigbluebutton.properties"
+    dial_number = node['bbb']['dial_number']
+    if File.exists?(filename) && ! dial_number.nil?
+      new_filename = "/tmp/#{File.basename(filename)}"
+      FileUtils.cp filename, new_filename
+      command = "sed -i 's|^defaultDialAccessNumber=.*|defaultDialAccessNumber=#{dial_number}|g' #{new_filename}"
+      `#{command}`
+      compare_and_replace_file(new_filename, filename, true)
+    end
+    
     xml_filename = "/var/bigbluebutton/playback/presentation/0.9.0/playback.html"
     if File.exists? xml_filename
       doc = Nokogiri::HTML(File.open(xml_filename)) { |x| x.noblanks }

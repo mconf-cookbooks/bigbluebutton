@@ -39,6 +39,7 @@ default['bbb']['default_video_quality'] = "medium"
 default['bbb']['stun_servers'] = [ "stun.l.google.com:19302" ]
 # use this to artificially add ice candidates to the remote SDP
 default['bbb']['remote_ice_candidates'] = []
+default['bbb']['dial_number'] = nil
 
 default['bbb']['ssl']['enabled'] = false
 # see http://docs.bigbluebutton.org/install/install.html#configure-nginx-http
