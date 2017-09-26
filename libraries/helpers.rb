@@ -13,6 +13,7 @@ require 'digest/sha1'
 require 'net/http'
 require 'json'
 require 'uri'
+require 'resolv'
 
 module BigBlueButton
   # Helpers for BigBlueButton
@@ -64,12 +65,12 @@ module BigBlueButton
 
     def dns_query(server_domain, opt = {})
       qname = server_domain
-      resolve = Dnsruby::Resolver.new(opt)
+      resolve = Resolv::DNS.new(opt)
       ip = nil
       begin
-        resolve.query(qname).answer.rrset(qname, Dnsruby::Types.A).rrs.each do |rss|
+        resolve.getresources(qname, Resolv::DNS::Resource::IN::A).each do |rss|
           address = rss.address
-          if address.class == Dnsruby::IPv4
+          if address.class == Resolv::IPv4
             ip = address.to_s
             break
           end
@@ -81,7 +82,7 @@ module BigBlueButton
     end
 
     def get_external_ip(server_domain)
-      dns_query(server_domain, {:nameserver => '8.8.8.8'})
+      dns_query(server_domain, { :nameserver => ['8.8.8.8', '8.8.4.4'] } )
     end
     
     def get_internal_ip()
@@ -89,6 +90,10 @@ module BigBlueButton
       # if there's no private ipv4 we return any other ipv4 different than loopback
       ip = Socket.ip_address_list.detect{ |intf| intf.ipv4? && ! intf.ipv4_loopback? } if ip.nil?
       ip.ip_address
+    end
+    
+    def is_natted?(external_ip)
+      Socket.ip_address_list.select{ |intf| intf.ip_address == external_ip }.empty?
     end
     
     def get_installed_bigbluebutton_packages(repo)
